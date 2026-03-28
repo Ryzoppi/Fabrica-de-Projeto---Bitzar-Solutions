@@ -5,3 +5,10 @@
 
 - Setas em preto: Fluxo inicial (MVP)
 - Setas em vermelho: Fluxo adicional com armazenamento
+
+## Como rodar o projeto
+```
+cd ./Front-End/
+npm i
+npm run dev
+```
