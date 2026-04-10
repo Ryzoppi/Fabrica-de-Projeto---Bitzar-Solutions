@@ -1,12 +1,13 @@
 import { Box, Typography } from '@mui/material'
 
+import { ChartsBlock } from './components'
+
 const ChatMessages = ({ chatHistory }) => {
   return (
     <>
       {chatHistory.map((msg, index) => {
         const isUser = msg.role === 'user'
-        const isComponent =
-          typeof msg.content === 'object' && msg.content !== null
+        const isCharts = msg.type === 'charts' && Array.isArray(msg.content)
 
         return (
           <Box
@@ -15,17 +16,17 @@ const ChatMessages = ({ chatHistory }) => {
               alignSelf: isUser ? 'flex-end' : 'flex-start',
               backgroundColor: isUser ? '#2563eb' : 'rgba(255, 255, 255, 0.05)',
               color: '#fff',
-              p: isComponent ? 1 : 2,
+              p: isCharts ? 1 : 2,
               borderRadius: isUser ? '15px 15px 0 15px' : '15px 15px 15px 0',
-              maxWidth: isComponent ? '100%' : '75%',
-              width: isComponent ? '100%' : 'auto',
+              maxWidth: isCharts ? '100%' : '75%',
+              width: isCharts ? '100%' : 'auto',
               border: isUser ? 'none' : '1px solid #3F3F3F',
-              boxShadow: isComponent ? '0 4px 12px rgba(0,0,0,0.3)' : 'none',
+              boxShadow: isCharts ? '0 4px 12px rgba(0,0,0,0.3)' : 'none',
             }}
           >
-            {isComponent ? (
+            {isCharts ? (
               <Box sx={{ minWidth: { xs: '280px', md: '500px' } }}>
-                {msg.content}
+                <ChartsBlock charts={msg.content} />
               </Box>
             ) : (
               <Typography variant="body1">{msg.content}</Typography>
