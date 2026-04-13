@@ -55,7 +55,7 @@ const ChartsBlock = ({ charts: initialCharts }) => {
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 }, // evita conflito com cliques
+      activationConstraint: { distance: 8 },
     }),
   )
 
