@@ -15,6 +15,8 @@ export default defineConfig({
       hooks: path.resolve(__dirname, './src/hooks'),
       views: path.resolve(__dirname, './src/views'),
       layouts: path.resolve(__dirname, './src/layouts'),
+      services: path.resolve(__dirname, './src/services'),
+      helpers: path.resolve(__dirname, './src/helpers'),
       src: path.resolve(__dirname, './src'),
     },
   },
