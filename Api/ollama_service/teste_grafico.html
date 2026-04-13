@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Meu Dashboard IA</title>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+</head>
+<body style="background-color: #1e1e1e; color: white; font-family: sans-serif; text-align: center;">
+
+    <h2>Dashboard Gerado pelo Llama 3 🤖</h2>
+    
+    <div id="meu-grafico" style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 20px;"></div>
+
+    <script>
+        
+        var opcoesDoGrafico = {
+            chart: { type: 'line', height: 350 },
+            series: [{ name: 'Vendas', data: [150, 300, 250] }],
+            xaxis: { categories: ['Janeiro', 'Fevereiro', 'Março'] }
+        };
+
+        
+        var grafico = new ApexCharts(document.querySelector("#meu-grafico"), opcoesDoGrafico);
+        grafico.render();
+    </script>
+
+</body>
+</html>
