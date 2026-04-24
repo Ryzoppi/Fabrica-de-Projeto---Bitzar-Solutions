@@ -1,0 +1,54 @@
+services:
+  csharp-api:
+    build: ./Api              
+    ports:
+      - "5000:5000"
+    networks:
+      - app-network
+  python-api:
+    build: ./PythonApi        
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+  n8n:
+    image: n8nio/n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+    volumes:
+      - n8n_data:/home/node/.n8n
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: n8n
+      POSTGRES_USER: n8n
+      POSTGRES_PASSWORD: n8n
+    networks:
+      - app-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - app-network
+    volumes:
+      - ollama_data:/root/.ollama
+networks:
+  app-network:
+    driver: bridge
+volumes:
+  n8n_data:
+  postgres_data:
+  ollama_data:
