@@ -3,3 +3,5 @@ uvicorn
 pandas
 requests
 openpyxl
+pydantic
+python-multipart
