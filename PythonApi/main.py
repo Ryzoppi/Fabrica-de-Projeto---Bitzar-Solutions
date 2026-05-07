@@ -1,131 +1,182 @@
-
-
-import json
 import pandas as pd
-import requests
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict, Any, Optional
+from datetime import datetime
+import io
 
-app = FastAPI()
+app = FastAPI(
+    title="API XLSX",
+    description="API para processar arquivos XLSX e extrair dados",
+    version="1.0.0"
+)
 
-class Payload(BaseModel):
-    data: List[dict]
-    tipo_grafico: str = "bar"
+# =============== MODELOS PYDANTIC ===============
 
-def limpar_dados(data_list: List[dict]) -> pd.DataFrame:
-    dataframe = pd.DataFrame(data_list)
+class PreparareResponse(BaseModel):
+    status: str
+    file_name: str
+    sheet_name: str
+    data_sample: List[Dict[str, Any]]
+    chart_type: str
     
-    # Renomear colunas com acento
-    # dataframe = dataframe.rename(columns={
-    #     "região": "regiao",
-    #     "preço_unitário": "preco_unitario",
-    #     "pct_desconto": "desconto"
-    # })
-    
-    dataframe["data"] = pd.to_datetime(dataframe["data"], errors="coerce")
-    dataframe["data"] = dataframe["data"].dt.strftime("%Y-%m-%d")
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "status": "success",
+                "file_name": "dados.xlsx",
+                "sheet_name": "Vendas",
+                "data_sample": [
+                    {"data": "2024-01-01", "categoria": "A", "receita": 1000}
+                ],
+                "chart_type": "line"
+            }
+        }
 
-    colunas_numericas = ["receita", "custo", "lucro", "quantidade"]
+class SaudeResponse(BaseModel):
+    status: str
+    timestamp: str
+
+# =============== FUNÇÕES ===============
+
+def limpar_dados(dataframe: pd.DataFrame) -> pd.DataFrame:
+    # Converter colunas de data
+    for col in dataframe.columns:
+        if 'data' in col.lower() or 'date' in col.lower():
+            dataframe[col] = pd.to_datetime(dataframe[col], errors='coerce')
+            dataframe[col] = dataframe[col].dt.strftime("%Y-%m-%d")
+    
+    # Converter colunas numéricas com valores em formato de moeda
+    colunas_numericas = [col for col in dataframe.columns 
+                         if any(term in col.lower() for term in 
+                                ['receita', 'custo', 'lucro', 'quantidade', 'preco', 'valor', 'venda'])]
+    
     for col in colunas_numericas:
         if col in dataframe.columns:
             dataframe[col] = (
                 dataframe[col].astype(str)
                 .str.replace(r"[R$\s,]", "", regex=True)
                 .str.replace(",", ".")
-                .pipe(pd.to_numeric, errors="coerce")
+                .pipe(pd.to_numeric, errors='coerce')
             )
-
-    dataframe.dropna(subset=["data", "receita"], inplace=True)
+    
+    # Remover linhas com valores críticos ausentes
+    critical_cols = [col for col in dataframe.columns 
+                     if col in colunas_numericas or 'data' in col.lower()]
+    if critical_cols:
+        dataframe = dataframe.dropna(subset=critical_cols, how='all')
+    
+    # Preencher valores faltantes em colunas categóricas
+    categorical_cols = dataframe.select_dtypes(include=['object']).columns
+    for col in categorical_cols:
+        dataframe[col] = dataframe[col].fillna('Desconhecido')
+    
+    # Preencher valores faltantes em colunas numéricas com 0
     dataframe[colunas_numericas] = dataframe[colunas_numericas].fillna(0)
-    dataframe.fillna({"categoria": "Desconhecido", "regiao": "Desconhecido"}, inplace=True)
-    return dataframe
-
-def resumir_para_llm(dataframe: pd.DataFrame) -> dict:
-    resumo = {}
-    resumo["receita_total"] = round(dataframe["receita"].sum(), 2)
-    resumo["media_receita"] = round(dataframe["receita"].mean(), 2)
-    resumo["periodo"] = {
-        "de": str(dataframe["data"].min()),
-        "ate": str(dataframe["data"].max())
-    }
     
-    if "categoria" in dataframe.columns:
-        resumo["por_categoria"] = (
-            dataframe.groupby("categoria")["receita"]
-            .sum().round(2)
-            .to_dict()
-        )
-    
-    mes_receita = (
-        dataframe.groupby(pd.to_datetime(dataframe["data"]).dt.to_period("M"))["receita"]
-        .sum().round(2)
-    )
-    resumo["por_mes"] = {str(k): v for k, v in mes_receita.items()}
-    
-    return resumo
-
-def detectar_tipo_grafico(dataframe: pd.DataFrame) -> str:
-    tem_datas = "data" in dataframe.columns
-    tem_categorias = "categoria" in dataframe.columns or "regiao" in dataframe.columns
-    
-    if tem_datas:
-        return "line"
-    elif tem_categorias:
-        return "bar"
-    return "bar"
-
-def construir_prompt_llama(resumo: dict, tipo_grafico: str) -> str:
-    return f"""
-Você é um especialista em visualização de dados. Com base no resumo de vendas abaixo,
-gere um objeto JSON de configuração válido para o ApexCharts.
-
-Regras:
-- Retorne APENAS um objeto JSON válido. Sem explicações, sem markdown, sem backticks.
-- O tipo de gráfico sugerido é: {tipo_grafico}
-- Se os dados tiverem datas/períodos, use "line". Se tiverem categorias, use "bar" ou "donut".
-- Se não conseguir decidir, use "bar" como padrão.
-- Use os dados como estão, não invente novos valores.
-- Inclua: series, xaxis, yaxis, title, tooltip, colors
-
-Resumo dos Dados:
-{json.dumps(resumo, indent=2, ensure_ascii=False)}
-
-Configuração ApexCharts:
-"""
+    return dataframe.reset_index(drop=True)
 
 FALLBACK_APEX_CONFIG = {
     "chart": {"type": "bar"},
-    "title": {"text": "Dados de Vendas"},
+    "title": {"text": "Dados Estatísticos"},
     "series": [],
     "xaxis": {"categories": []},
     "colors": ["#1F4E79"]
 }
 
-def chamar_llama(prompt: str) -> dict:
-    try:
-        response = requests.post(
-            "http://ollama:11434/api/generate",
-            json={"model": "llama2", "prompt": prompt, "stream": False},
-            timeout=120
-        )
-        raw = response.json()["response"]
-        print(f"DEBUG - Raw response: {raw}")
-        raw = raw.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-        print(f"DEBUG - Cleaned response: {raw}")
-        return json.loads(raw)
-    except Exception as e:
-        print(f"DEBUG - Error: {e}")
-        return FALLBACK_APEX_CONFIG
+# =============== ROTAS ===============
 
-@app.post("/preparar")
-async def preparar(payload: List[dict]):
+@app.post(
+    "/preparar",
+    response_model=PreparareResponse,
+    summary="Processa arquivo XLSX",
+    description="Recebe um arquivo XLSX, extrai os dados, limpa e retorna uma amostra com tipo de gráfico detectado",
+    response_description="Dados processados com sucesso",
+    tags=["Processamento"]
+)
+async def preparar(file: UploadFile = File(..., description="Arquivo XLSX para processar")) -> PreparareResponse:
+    """
+    Processa um arquivo XLSX e retorna os dados extraídos.
+    
+    - **file**: Arquivo XLSX a processar
+    
+    Retorna:
+    - **status**: sempre "success" em caso de sucesso
+    - **file_name**: nome do arquivo enviado
+    - **sheet_name**: nome da aba Excel processada
+    - **data_sample**: primeiras 10 linhas dos dados
+    - **chart_type**: tipo de gráfico detectado (line, bar)
+    """
     try:
-        dataframe = limpar_dados(payload)
-        tipo_grafico = detectar_tipo_grafico(dataframe)
-        resumo = resumir_para_llm(dataframe)
-        prompt = construir_prompt_llama(resumo, tipo_grafico)
-        config = chamar_llama(prompt)
-        return config
+        contents = await file.read()
+        excel_file = io.BytesIO(contents)
+        
+        xls = pd.ExcelFile(excel_file)
+        sheet_name = xls.sheet_names[0]
+        
+        dataframe = pd.read_excel(excel_file, sheet_name=sheet_name)
+        
+        dataframe = limpar_dados(dataframe)
+        
+        if len(dataframe) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Arquivo não contém dados válidos"
+            )
+        
+        data_sample = dataframe.head(10).fillna('').to_dict(orient='records')
+        
+        return PreparareResponse(
+            status='success',
+            file_name=file.filename,
+            sheet_name=sheet_name,
+            data_sample=data_sample
+        )
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao processar arquivo: {str(e)}"
+        )
+
+@app.get(
+    "/saude",
+    response_model=SaudeResponse,
+    summary="Verifica saúde da API",
+    description="Retorna o status da API e timestamp atual",
+    tags=["Status"]
+)
+async def saude() -> SaudeResponse:
+    """
+    Verifica se a API está funcionando corretamente.
+    
+    Retorna:
+    - **status**: sempre "ok"
+    - **timestamp**: horário atual em ISO format
+    """
+    return SaudeResponse(
+        status='ok',
+        timestamp=datetime.now().isoformat()
+    )
+
+# =============== ROOT ===============
+
+@app.get(
+    "/",
+    summary="Raiz da API",
+    tags=["Informação"]
+)
+async def root():
+    return {
+        "nome": "API XLSX",
+        "versao": "1.0.0",
+        "descricao": "API para processar arquivos XLSX",
+        "endpoints": {
+            "docs": "/docs",
+            "preparar": "/preparar",
+            "saude": "/saude"
+        }
+    }

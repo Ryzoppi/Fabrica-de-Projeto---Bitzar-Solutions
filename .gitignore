@@ -22,3 +22,6 @@ Thumbs.db
 
 node_modules/
 .nuget/
+
+Api/obj
+Api/publish
