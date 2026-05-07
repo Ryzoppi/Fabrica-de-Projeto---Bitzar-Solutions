@@ -1,24 +1,31 @@
-using Api.Application.DTOs;
-using Api.Domain.Ports;
-using Microsoft.AspNetCore.Mvc;
+ using Microsoft.AspNetCore.Mvc;
+ using OfficeOpenXml;
+ [ApiController]
+ [Route("api/excel")]
+ public class ExcelController : ControllerBase
+ {
+         [HttpPost("upload")]
+         public async Task<IActionResult> Upload(IFormFile file)
+         {
+            ExcelPackage.License.SetNonCommercialPersonal("Guilherme");
+             using var stream = new MemoryStream();
+             await file.CopyToAsync(stream);
+             using var package = new ExcelPackage(stream);
+             var worksheet = package.Workbook.Worksheets[0];
+             var data = new List<Dictionary<string, object>>();
+             for (int row = 2; row <= worksheet.Dimension.Rows; row++)
+             {
+                 var rowData = new Dictionary<string, object>();
+                 for (int col = 1; col <= worksheet.Dimension.Columns; col++)
+                 {
+                     var header = worksheet.Cells[1, col].Text;
+                     var value = worksheet.Cells[row, col].Text;
+                     rowData[header] = value;
 
-[ApiController]
-[Route("api/[controller]")]
-public class DashboardController : ControllerBase
-{
-    private readonly IPythonService _pythonService;
-
-    public DashboardController(IPythonService pythonService)
-    {
-        _pythonService = pythonService;
+                 data.Add(rowData);
+            }
+        }
+        return Ok(data);
     }
 
-    [HttpPost("generate")]
-    public async Task<IActionResult> Gerar([FromForm] RequestDTO request)
-        {
-            if (request.File == null) return BadRequest("Arquivo não enviado.");
-    
-            var resultado = await _orchestrator.ProcessarFluxoExcel(request.File, request.Propt);
-            return Ok(new { apexConfig = resultado });
-        }
 }

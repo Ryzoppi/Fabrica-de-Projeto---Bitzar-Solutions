@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="EPPlus" Version="8.5.4" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
     <PackageReference Include="MiniExcel" Version="1.43.1" />
     <PackageReference Include="NSwag.AspNetCore" Version="14.6.3" />
