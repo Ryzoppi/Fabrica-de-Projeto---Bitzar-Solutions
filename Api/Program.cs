@@ -1,4 +1,3 @@
-using Api.Domain.Ports;
 using OfficeOpenXml;
 ExcelPackage.License.SetNonCommercialPersonal("Guilherme");
 
@@ -12,9 +11,8 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-
-    app.UseSwagger();
-    app.UseSwaggerUI();
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors("AllowReactApp");
 
