@@ -33,7 +33,7 @@ const Chat = () => {
     }
 
     setChatHistory((prev) => [...prev, userMessage])
-    reset({ files: [], prompt: '' })
+
     setIsLoading(true)
 
     try {
@@ -43,6 +43,7 @@ const Chat = () => {
       })
       const iaMessage = { role: 'ia', content: response?.data?.content }
       setChatHistory((prev) => [...prev, iaMessage])
+      reset({ files: [], prompt: '' })
     } catch (error) {
       console.error(error)
       const errorMessage = {

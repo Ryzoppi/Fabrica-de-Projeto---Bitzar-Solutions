@@ -1,5 +1,6 @@
 import api from 'services/api'
 
-const sendMessage = ({ prompt }) => api.post('/chat', { prompt })
+const sendMessage = async ({ data }) =>
+  await api.postForm('/processar', { data })
 
 export default { sendMessage }
