@@ -19,7 +19,6 @@ class PreparareResponse(BaseModel):
     file_name: str
     sheet_name: str
     data_sample: List[Dict[str, Any]]
-    chart_type: str
     
     class Config:
         json_schema_extra = {
@@ -30,7 +29,6 @@ class PreparareResponse(BaseModel):
                 "data_sample": [
                     {"data": "2024-01-01", "categoria": "A", "receita": 1000}
                 ],
-                "chart_type": "line"
             }
         }
 
