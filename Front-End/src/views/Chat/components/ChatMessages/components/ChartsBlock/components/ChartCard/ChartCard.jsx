@@ -9,8 +9,34 @@ import Chart from 'react-apexcharts'
 
 import { ChartConfigModal } from './components'
 
+const isPolar = (type) => ['pie', 'donut'].includes(type)
+
+const normalizeSeries = (series, type) => {
+  if (!Array.isArray(series)) return []
+
+  if (isPolar(type)) {
+    return series.map((s) => {
+      if (typeof s === 'number') return s
+      if (typeof s === 'object' && s !== null) return Number(s.y ?? s.data ?? 0)
+      return 0
+    })
+  }
+
+  return series.map((s) => {
+    if (typeof s !== 'object' || s === null) {
+      return { name: 'Série', data: [] }
+    }
+    return {
+      ...s,
+      data: Array.isArray(s.data) ? s.data : [],
+    }
+  })
+}
+
 const ChartCard = ({ chart, allCharts, onApply, dragListeners }) => {
   const [modalOpen, setModalOpen] = useState(false)
+
+  const safeSeries = normalizeSeries(chart.series, chart.type)
 
   return (
     <>
@@ -48,7 +74,6 @@ const ChartCard = ({ chart, allCharts, onApply, dragListeners }) => {
             <DragIndicatorIcon fontSize="small" />
           </IconButton>
 
-          {/* Configurações */}
           <IconButton
             size="small"
             onClick={() => setModalOpen(true)}
@@ -64,8 +89,8 @@ const ChartCard = ({ chart, allCharts, onApply, dragListeners }) => {
 
         <Chart
           key={`${chart.id}-${chart.type}`}
-          options={chart.options}
-          series={chart.series}
+          options={chart.options ?? {}}
+          series={safeSeries}
           type={chart.type}
           width="100%"
         />

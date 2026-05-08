@@ -2,6 +2,8 @@ import { Box, CircularProgress, Typography } from '@mui/material'
 import { AttachmentChip, ChartsBlock } from './components'
 
 const ChatMessages = ({ chatHistory, isLoading }) => {
+  console.log(chatHistory)
+
   return (
     <>
       {chatHistory.map((msg, index) => {
