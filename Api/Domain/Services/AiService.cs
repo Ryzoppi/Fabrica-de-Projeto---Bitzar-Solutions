@@ -32,7 +32,7 @@ Retorne apenas o JSON válido para ApexCharts:";
                 
                 var response = await _http.PostAsJsonAsync("/api/generate", new
                 {
-                    model = "llama3",
+                    model = "llama3.2",
                     prompt = promptCompleto,
                     stream = false
                 });

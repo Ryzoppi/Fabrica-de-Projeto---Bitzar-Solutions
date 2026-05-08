@@ -16,9 +16,9 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddHttpClient<PythonService>()
-    .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromSeconds(30));
+    .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromSeconds(180));
 builder.Services.AddHttpClient<AiService>()
-    .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromSeconds(60));
+    .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromSeconds(180));
 builder.Services.AddControllers();
 builder.WebHost.UseUrls("http://0.0.0.0:5000");
 builder.Services.AddEndpointsApiExplorer();
