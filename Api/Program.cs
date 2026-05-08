@@ -1,8 +1,18 @@
 using OfficeOpenXml;
 ExcelPackage.License.SetNonCommercialPersonal("Guilherme");
 
-// builder.Services.AddScoped<IPythonService, PythonService>();
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
 
 builder.Services.AddControllers();
 builder.WebHost.UseUrls("http://0.0.0.0:5000");
@@ -14,7 +24,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseCors("AllowReactApp");
+app.UseCors("AllowLocalhost");
 
 app.UseHttpsRedirection();
 
