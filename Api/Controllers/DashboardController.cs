@@ -1,31 +1,43 @@
- using Microsoft.AspNetCore.Mvc;
- using OfficeOpenXml;
- [ApiController]
- [Route("api/excel")]
- public class ExcelController : ControllerBase
- {
-         [HttpPost("upload")]
-         public async Task<IActionResult> Upload(IFormFile file)
-         {
-            ExcelPackage.License.SetNonCommercialPersonal("Guilherme");
-             using var stream = new MemoryStream();
-             await file.CopyToAsync(stream);
-             using var package = new ExcelPackage(stream);
-             var worksheet = package.Workbook.Worksheets[0];
-             var data = new List<Dictionary<string, object>>();
-             for (int row = 2; row <= worksheet.Dimension.Rows; row++)
-             {
-                 var rowData = new Dictionary<string, object>();
-                 for (int col = 1; col <= worksheet.Dimension.Columns; col++)
-                 {
-                     var header = worksheet.Cells[1, col].Text;
-                     var value = worksheet.Cells[row, col].Text;
-                     rowData[header] = value;
+using Microsoft.AspNetCore.Mvc;
+using OfficeOpenXml;
 
-                 data.Add(rowData);
-            }
-        }
-        return Ok(data);
+[ApiController]
+[Route("")]
+public class DashboardController : ControllerBase
+{
+    private readonly PythonService _pythonService;
+    private readonly AiService _aiService;
+
+    public DashboardController(PythonService pythonService, AiService aiService)
+    {
+        _pythonService = pythonService;
+        _aiService = aiService;
     }
 
+    [HttpPost("processar")]
+    public async Task<IActionResult> Processar(IFormFile arquivo, [FromForm] string prompt)
+    {
+            Console.WriteLine($"Arquivo: {arquivo?.FileName}"); // ← log aqui
+            Console.WriteLine($"Prompt: {prompt}"); 
+        try
+        {
+            if (arquivo == null || arquivo.Length == 0)
+                return BadRequest(new { erro = "Arquivo não fornecido" });
+
+            if (string.IsNullOrEmpty(prompt))
+                return BadRequest(new { erro = "Prompt não fornecido" });
+
+            var resultadoPython = await _pythonService.ProcessarExcelAsync(arquivo);
+            var resultado = await _aiService.ChamarLlama(resultadoPython, prompt);
+            return Ok(resultado);
+        }
+        catch (HttpRequestException ex)
+        {
+            return StatusCode(503, new { erro = "Serviço Python indisponível", detalhes = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { erro = "Erro ao processar", detalhes = ex.Message });
+        }
+    }
 }

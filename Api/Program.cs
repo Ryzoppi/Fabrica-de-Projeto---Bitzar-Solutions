@@ -1,4 +1,5 @@
 using OfficeOpenXml;
+
 ExcelPackage.License.SetNonCommercialPersonal("Guilherme");
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +15,10 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddHttpClient<PythonService>()
+    .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromSeconds(30));
+builder.Services.AddHttpClient<AiService>()
+    .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromSeconds(60));
 builder.Services.AddControllers();
 builder.WebHost.UseUrls("http://0.0.0.0:5000");
 builder.Services.AddEndpointsApiExplorer();
