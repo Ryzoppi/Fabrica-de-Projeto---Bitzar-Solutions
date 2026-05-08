@@ -1,18 +1,18 @@
 services:
 
-  postgres:
-    image: postgres:15
-    container_name: postgres
-    environment:
-      POSTGRES_DB: n8n
-      POSTGRES_USER: n8n
-      POSTGRES_PASSWORD: n8n
-    ports:
-      - "5432:5432"
-    networks:
-      - app-network
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+  # postgres:
+  #   image: postgres:15
+  #   container_name: postgres
+  #   environment:
+  #     POSTGRES_DB: n8n
+  #     POSTGRES_USER: n8n
+  #     POSTGRES_PASSWORD: n8n
+  #   ports:
+  #     - "5432:5432"
+  #   networks:
+  #     - app-network
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
 
   ollama:
     image: ollama/ollama
@@ -30,7 +30,7 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - postgres
+      # - postgres
       - ollama
     environment:
       - ASPNETCORE_URLS=http://+:5000
@@ -44,34 +44,34 @@ services:
       - "8000:8000"
     depends_on:
       - ollama
-      - postgres
+      # - postgres
     networks:
       - app-network
 
-  n8n:
-    image: n8nio/n8n
-    container_name: n8n
-    ports:
-      - "5678:5678"
-    environment:
-      - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_HOST=postgres
-      - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=n8n
-      - DB_POSTGRESDB_USER=n8n
-      - DB_POSTGRESDB_PASSWORD=n8n
-    depends_on:
-      - postgres
-    networks:
-      - app-network
-    volumes:
-      - n8n_data:/home/node/.n8n
+  # n8n:
+  #   image: n8nio/n8n
+  #   container_name: n8n
+  #   ports:
+  #     - "5678:5678"
+  #   environment:
+  #     - DB_TYPE=postgresdb
+  #     - DB_POSTGRESDB_HOST=postgres
+  #     - DB_POSTGRESDB_PORT=5432
+  #     - DB_POSTGRESDB_DATABASE=n8n
+  #     - DB_POSTGRESDB_USER=n8n
+  #     - DB_POSTGRESDB_PASSWORD=n8n
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - app-network
+  #   volumes:
+  #     - n8n_data:/home/node/.n8n
 
 networks:
   app-network:
     driver: bridge
 
 volumes:
-  postgres_data:
-  n8n_data:
+  # postgres_data:
+  # n8n_data:
   ollama_data:
