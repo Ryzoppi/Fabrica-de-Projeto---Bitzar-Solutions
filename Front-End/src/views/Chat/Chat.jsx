@@ -13,8 +13,94 @@ import {
 
 import services from 'services'
 
+const incomingCharts = [
+  {
+    id: 'chart-1',
+    title: 'Performance Jan–Abr',
+    type: 'bar',
+    options: {
+      chart: {
+        id: 'bar-1',
+        background: 'transparent',
+        theme: { mode: 'dark' },
+        toolbar: { show: false },
+        zoom: { enabled: false },
+      },
+      tooltip: {
+        theme: 'dark',
+      },
+      legend: {
+        labels: {
+          colors: '#aaaaaa',
+        },
+      },
+      xaxis: {
+        categories: ['Jan', 'Fev', 'Mar', 'Abr'],
+        labels: {
+          style: {
+            colors: '#aaaaaa',
+          },
+        },
+      },
+      yaxis: {
+        labels: {
+          style: {
+            colors: '#aaaaaa',
+          },
+        },
+      },
+      colors: ['#00E39E'],
+    },
+    series: [{ name: 'Performance', data: [44, 55, 41, 67] }],
+  },
+  {
+    id: 'chart-2',
+    title: 'Receita mensal',
+    type: 'line',
+    options: {
+      chart: {
+        id: 'line-1',
+        background: 'transparent',
+        theme: { mode: 'dark' },
+        toolbar: { show: false },
+        zoom: { enabled: false },
+      },
+      tooltip: {
+        theme: 'dark',
+      },
+      legend: {
+        labels: {
+          colors: '#aaaaaa',
+        },
+      },
+      xaxis: {
+        categories: ['Jan', 'Fev', 'Mar', 'Abr'],
+        labels: {
+          style: {
+            colors: '#aaaaaa',
+          },
+        },
+      },
+      yaxis: {
+        labels: {
+          style: {
+            colors: '#aaaaaa',
+          },
+        },
+      },
+      colors: ['#60A5FA'],
+    },
+    series: [{ name: 'Receita', data: [12000, 15000, 11000, 18000] }],
+  },
+]
+
 const Chat = () => {
-  const [chatHistory, setChatHistory] = useState([])
+  const [chatHistory] = useState([
+    { role: 'user', content: 'Olá, gere um gráfico de performance deste ano.' },
+    { role: 'ia', content: 'Claro! Aqui estão os dados processados:' },
+    { role: 'ia', content: incomingCharts, type: 'charts' },
+    { role: 'ia', content: 'Espero que isso ajude na sua análise.' },
+  ])
   const [isLoading, setIsLoading] = useState(false)
 
   const fileInputRef = useRef(null)
