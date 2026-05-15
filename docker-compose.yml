@@ -14,6 +14,15 @@ services:
   #   volumes:
   #     - postgres_data:/var/lib/postgresql/data
 
+  frontend:
+    build: ./Front-End
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    networks:
+      - app-network
+    command: npm run dev -- --host 0.0.0.0
+
   ollama:
     image: ollama/ollama
     container_name: ollama
@@ -26,6 +35,10 @@ services:
 
   csharp-api:
     build: ./Api
+    develop:
+      watch:
+        - path: ./Api
+          action: rebuild
     container_name: csharp-api
     ports:
       - "5000:5000"
@@ -39,6 +52,10 @@ services:
 
   python-api:
     build: ./PythonApi
+    develop:
+      watch:
+        - path: ./PythonApi
+          action: rebuild
     container_name: python-api
     ports:
       - "8000:8000"
