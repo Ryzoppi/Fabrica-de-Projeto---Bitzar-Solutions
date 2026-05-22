@@ -16,11 +16,15 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
+    container_name: pgadmin4
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
     ports:
       - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./servers.json:/pgadmin4/servers.json:ro
     networks:
       - app-network
 
@@ -35,30 +39,30 @@ services:
     develop:
       watch:
         - path: ./Front-End/src
-          action: sync # sync = copia arquivo sem rebuildar
+          action: sync
           target: /app/src
         - path: ./Front-End/package.json
-          action: rebuild # rebuild = reconstrói a imagem
+          action: rebuild
 
   ollama:
-    image: ollama/ollama
+    image: ollama/ollama:latest
     container_name: ollama
     volumes:
       - ollama_data:/root/.ollama
       - ./PythonApi:/workspace
     entrypoint: >
       sh -c "ollama serve &
-             sleep 5 &&
-             ollama pull phi3:mini &&
-             ollama pull nomic-embed-text &&
-             ollama create bitzar-rag -f /workspace/Modelfile &&
-             wait"
+            sleep 5 &&
+            ollama pull qwen2.5:1.5b &&
+            ollama pull nomic-embed-text &&
+            ollama create bitzar-rag -f /workspace/Modelfile &&
+            wait"
     networks:
       - app-network
     develop:
       watch:
         - path: ./PythonApi/Modelfile
-          action: rebuild # rebuild ao mudar o Modelfile
+          action: rebuild
 
   csharp-api:
     build: ./Api
@@ -79,6 +83,7 @@ services:
 
   python-api:
     build: ./PythonApi
+    container_name: python-api
     ports:
       - "8000:8000"
     environment:
@@ -92,14 +97,14 @@ services:
     develop:
       watch:
         - path: ./PythonApi
-          action: sync # sync = copia sem rebuildar
+          action: sync
           target: /app
           ignore:
             - __pycache__
             - "*.pyc"
             - .venv
         - path: ./PythonApi/requirements.txt
-          action: rebuild # rebuild só se mudar dependências
+          action: rebuild
 
 networks:
   app-network:
@@ -108,3 +113,4 @@ networks:
 volumes:
   postgres_data:
   ollama_data:
+  pgadmin_data:

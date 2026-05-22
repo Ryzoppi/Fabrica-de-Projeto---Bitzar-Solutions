@@ -7,7 +7,7 @@ until curl -s http://localhost:11434/api/tags > /dev/null; do
 done
 
 echo "Baixando modelo base phi3:mini..."
-ollama pull phi3:mini
+ollama pull qwen2.5:1.5b
 
 echo "Registrando modelo bitzar-rag..."
 ollama create bitzar-rag -f ./Modelfile
