@@ -1,4 +1,5 @@
 .venv
+.env
 
 [Bb]in/
 [Ob]j/

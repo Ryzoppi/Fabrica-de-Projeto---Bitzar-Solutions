@@ -1,18 +1,32 @@
 services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./PythonApi/db/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
 
-  # postgres:
-  #   image: postgres:15
-  #   container_name: postgres
-  #   environment:
-  #     POSTGRES_DB: n8n
-  #     POSTGRES_USER: n8n
-  #     POSTGRES_PASSWORD: n8n
-  #   ports:
-  #     - "5432:5432"
-  #   networks:
-  #     - app-network
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./servers.json:/pgadmin4/servers.json:ro
+    networks:
+      - app-network
 
   frontend:
     build: ./Front-End
@@ -22,73 +36,81 @@ services:
     networks:
       - app-network
     command: npm run dev -- --host 0.0.0.0
+    develop:
+      watch:
+        - path: ./Front-End/src
+          action: sync
+          target: /app/src
+        - path: ./Front-End/package.json
+          action: rebuild
 
   ollama:
-    image: ollama/ollama
+    image: ollama/ollama:latest
     container_name: ollama
-    ports:
-      - "11434:11434"
-    networks:
-      - app-network
     volumes:
       - ollama_data:/root/.ollama
+      - ./PythonApi:/workspace
+    entrypoint: >
+      sh -c "ollama serve &
+            sleep 5 &&
+            ollama pull qwen2.5:1.5b &&
+            ollama pull nomic-embed-text &&
+            ollama create bitzar-rag -f /workspace/Modelfile &&
+            wait"
+    networks:
+      - app-network
+    develop:
+      watch:
+        - path: ./PythonApi/Modelfile
+          action: rebuild
 
   csharp-api:
     build: ./Api
-    develop:
-      watch:
-        - path: ./Api
-          action: rebuild
     container_name: csharp-api
     ports:
       - "5000:5000"
     depends_on:
-      # - postgres
+      - postgres
       - ollama
     environment:
       - ASPNETCORE_URLS=http://+:5000
     networks:
       - app-network
+    develop:
+      watch:
+        - path: ./Api
+          action: rebuild
 
   python-api:
     build: ./PythonApi
-    develop:
-      watch:
-        - path: ./PythonApi
-          action: rebuild
     container_name: python-api
     ports:
       - "8000:8000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      OLLAMA_HOST: ${OLLAMA_HOST}
     depends_on:
+      - postgres
       - ollama
-      # - postgres
     networks:
       - app-network
-
-  # n8n:
-  #   image: n8nio/n8n
-  #   container_name: n8n
-  #   ports:
-  #     - "5678:5678"
-  #   environment:
-  #     - DB_TYPE=postgresdb
-  #     - DB_POSTGRESDB_HOST=postgres
-  #     - DB_POSTGRESDB_PORT=5432
-  #     - DB_POSTGRESDB_DATABASE=n8n
-  #     - DB_POSTGRESDB_USER=n8n
-  #     - DB_POSTGRESDB_PASSWORD=n8n
-  #   depends_on:
-  #     - postgres
-  #   networks:
-  #     - app-network
-  #   volumes:
-  #     - n8n_data:/home/node/.n8n
+    develop:
+      watch:
+        - path: ./PythonApi
+          action: sync
+          target: /app
+          ignore:
+            - __pycache__
+            - "*.pyc"
+            - .venv
+        - path: ./PythonApi/requirements.txt
+          action: rebuild
 
 networks:
   app-network:
     driver: bridge
 
 volumes:
-  # postgres_data:
-  # n8n_data:
+  postgres_data:
   ollama_data:
+  pgadmin_data:
