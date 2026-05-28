@@ -90,7 +90,9 @@ public class AiService
         {
             type   = "charts",
             role   = "ai",
-            charts = new[] { chartData },
+            charts = chartData.TryGetProperty("charts", out var charts)
+                ? charts
+                : (object)Array.Empty<object>(),
             message = chartData.TryGetProperty("title", out var title)
                 ? title.GetString() ?? "Análise concluída"
                 : "Análise concluída"

@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
-import { Grid } from '@mui/material'
+import { Grid, Skeleton } from '@mui/material'
 import {
   DndContext,
   closestCenter,
@@ -72,12 +72,25 @@ const mergeChartConfig = (customOptions = {}) => {
   }
 }
 
-const initializeCharts = (charts) => {
-  return charts.map((chart) => ({
-    ...chart,
-    options: mergeChartConfig(chart.options),
-  }))
-}
+const initializeCharts = (charts) =>
+  charts.map((chart) => {
+    const type = chart.type ?? chart.chartType
+    const isPolar = ['pie', 'donut'].includes(type)
+
+    const series = isPolar ? chart.series.flatMap((s) => s.data) : chart.series
+
+    return {
+      ...chart,
+      type,
+      series,
+      options: mergeChartConfig({
+        ...chart.options,
+        ...(isPolar && { labels: chart.categories }),
+        chart: { type },
+        xaxis: isPolar ? {} : { categories: chart.categories },
+      }),
+    }
+  })
 
 const SortableChart = ({ chart, allCharts, onApply, cols }) => {
   const {
@@ -112,7 +125,8 @@ const SortableChart = ({ chart, allCharts, onApply, cols }) => {
 }
 
 const ChartsBlock = ({ charts: initialCharts }) => {
-  const [charts, setCharts] = useState(initialCharts)
+  const [charts, setCharts] = useState(() => initializeCharts(initialCharts))
+  const [ready, setReady] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -136,21 +150,78 @@ const ChartsBlock = ({ charts: initialCharts }) => {
       const currentIsPolar = ['pie', 'donut'].includes(c.type)
       const nextIsPolar = ['pie', 'donut'].includes(newType)
 
-      let newSeries = c.series
-
+      // Cartesiano → Polar
       if (!currentIsPolar && nextIsPolar) {
-        newSeries = c.series.flatMap((s) => s.data)
-      } else if (currentIsPolar && !nextIsPolar) {
-        newSeries = [{ name: 'Série', data: c.series }]
-      } else {
+        const categories = c.categories ?? c.options?.xaxis?.categories ?? []
+
+        const series = categories.map((_, i) =>
+          c.series.reduce((acc, s) => {
+            const point = s.data?.[i]
+            const val = typeof point === 'object' ? (point.y ?? point) : point
+            return acc + (Number(val) || 0)
+          }, 0),
+        )
+
         return {
+          ...c,
+          type: newType,
+          series,
+          _originalSeries: c._originalSeries ?? c.series,
+          options: mergeChartConfig({
+            ...c.options,
+            labels: categories,
+            chart: { ...c.options?.chart, type: newType },
+            xaxis: {},
+          }),
+        }
+      }
+
+      // Polar → Cartesiano
+      if (currentIsPolar && !nextIsPolar) {
+        const categories =
+          c.options?.labels ??
+          c.categories ??
+          c.options?.xaxis?.categories ??
+          []
+
+        const series = c._originalSeries
+          ? c._originalSeries.map((s) => ({
+              ...s,
+              data: s.data.map((point) =>
+                typeof point === 'object' ? (point.y ?? point) : point,
+              ),
+            }))
+          : [
+              {
+                name: 'Valor',
+                data: (Array.isArray(c.series) ? c.series : []).map((val) =>
+                  typeof val === 'object' ? (val.y ?? val) : val,
+                ),
+              },
+            ]
+
+        const { labels: _removed, ...cleanOptions } = c.options ?? {}
+
+        return {
+          ...c,
+          type: newType,
+          series,
+          _originalSeries: undefined,
+          options: mergeChartConfig({
+            ...cleanOptions,
+            chart: { ...cleanOptions?.chart, type: newType },
+            xaxis: { categories },
+          }),
+        }
+      }
+
+      return {
         ...c,
         type: newType,
-        series: newSeries,
-        options: {
+        options: mergeChartConfig({
           ...c.options,
-          chart: { ...c.options.chart, type: newType },
-        }}
+          chart: { ...c.options?.chart, type: newType },
+        }),
       }
     })
 
@@ -159,6 +230,11 @@ const ChartsBlock = ({ charts: initialCharts }) => {
   }
 
   const cols = Math.min(charts.length, 4)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setReady(true), 50)
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
     <DndContext
@@ -171,15 +247,26 @@ const ChartsBlock = ({ charts: initialCharts }) => {
         strategy={rectSortingStrategy}
       >
         <Grid container spacing={2} sx={{ width: '100%', p: 1 }}>
-          {charts.map((chart) => (
-            <SortableChart
-              key={chart.id}
-              chart={chart}
-              allCharts={charts}
-              onApply={handleApply}
-              cols={cols}
-            />
-          ))}
+          {ready
+            ? charts.map((chart) => (
+                <SortableChart
+                  key={chart.id}
+                  chart={chart}
+                  allCharts={charts}
+                  onApply={handleApply}
+                  cols={cols}
+                />
+              ))
+            : charts.map((_, i) => (
+                <Grid key={i} size={{ xs: 12, sm: 6, md: 12 / cols }}>
+                  <Skeleton
+                    variant="rounded"
+                    width="100%"
+                    height={300}
+                    sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}
+                  />
+                </Grid>
+              ))}
         </Grid>
       </SortableContext>
     </DndContext>

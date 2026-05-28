@@ -93,6 +93,7 @@ const ChartCard = ({ chart, allCharts, onApply, dragListeners }) => {
           series={safeSeries}
           type={chart.type}
           width="100%"
+          height={250}
         />
       </Box>
 
