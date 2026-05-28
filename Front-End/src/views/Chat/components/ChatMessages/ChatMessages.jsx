@@ -8,7 +8,7 @@ const ChatMessages = ({ chatHistory, isLoading }) => {
     <>
       {chatHistory.map((msg, index) => {
         const isUser = msg.role === 'user'
-        const isCharts = msg.type === 'charts'
+        const isCharts = msg.type === 'charts' && Array.isArray(msg.content)
         const hasAttachments =
           isUser && Array.isArray(msg.attachments) && msg.attachments.length > 0
 
