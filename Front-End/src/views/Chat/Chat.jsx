@@ -24,9 +24,17 @@ const Chat = () => {
   const onAttachClick = () => fileInputRef.current.click()
 
   const onSubmit = async ({ prompt, files }) => {
-    console.log('Enviando:', { prompt, files })
-
     if (!prompt.trim() && files.length === 0) return
+
+    const history = chatHistory
+      .filter((msg) => msg.role === 'user' || msg.role === 'ia')
+      .slice(-10) // Últimas 10 mensagens
+      .map((msg) => ({
+        role: msg.role === 'ia' ? 'assistant' : 'user',
+        content:
+          msg.role === 'ia' ? (msg.rawForHistory ?? '') : (msg.content ?? ''),
+      }))
+      .filter((msg) => msg.content !== '')
 
     const userMessage = {
       role: 'user',
@@ -42,8 +50,8 @@ const Chat = () => {
       const response = await services.modules.chat.sendMessage({
         prompt,
         files,
+        history,
       })
-      console.log('Resposta recebida:', response)
 
       const dataPath = response?.data?.data
       const charts = dataPath?.charts ?? []
@@ -57,6 +65,9 @@ const Chat = () => {
           id: chart.id ?? crypto.randomUUID(),
           type: chart.type ?? chart.chartType,
         })),
+        rawForHistory: JSON.stringify({
+          charts: dataPath?.charts ?? [],
+        }),
       }
 
       setChatHistory((prev) => [...prev, iaMessage])

@@ -3,6 +3,7 @@ import ollama
 from fastapi import APIRouter, HTTPException
 from models.schemas import ChatRequest
 from rag.prompt_builder import construir_prompt
+from utils.filtro import extrair_filtro_e_aplicar
 
 router = APIRouter(tags=["IA"])
 
@@ -42,7 +43,16 @@ APEX_SCHEMA = {
 
 @router.post("/chat")
 async def chat(req: ChatRequest):
-    prompt = construir_prompt(req.dados, req.tipo_grafico)
+    history_raw = [{"role": m.role, "content": m.content} for m in req.history]
+
+    dados_filtrados = extrair_filtro_e_aplicar(req.dados, req.prompt, history_raw)
+
+    prompt = construir_prompt(
+        dados_filtrados, req.tipo_grafico, req.prompt, history_raw
+    )
+
+    messages = history_raw
+    messages.append({"role": "user", "content": prompt})
 
     try:
         client = ollama.Client(host="http://ollama:11434", timeout=170)
@@ -53,21 +63,18 @@ async def chat(req: ChatRequest):
             options={
                 "temperature": 0,
                 "num_predict": 2048,
-                "num_ctx": 4096,
+                "num_ctx": 8192,
             },
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
         )
 
         raw = response["message"]["content"]
-
         chart_data = json.loads(raw)
         return chart_data
 
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=500, detail=f"JSON inválido: {e}")
-
     except ollama.ResponseError as e:
         raise HTTPException(status_code=500, detail=f"Ollama error: {e.error}")
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")

@@ -1,10 +1,14 @@
 import api from 'services/api'
 
-const sendMessage = async ({ prompt, files }) => {
+const sendMessage = async ({ prompt, files, history = [] }) => {
   const formData = new FormData()
-  formData.append('arquivo', files[0]) // primeiro arquivo
+
+  files.forEach((file) => formData.append('arquivos', file))
+
   formData.append('prompt', prompt)
-  
+
+  formData.append('history', JSON.stringify(history))
+
   return await api.post('/processar', formData)
 }
 

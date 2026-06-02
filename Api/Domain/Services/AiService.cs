@@ -18,10 +18,15 @@ public class AiService
         _http.BaseAddress = new Uri("http://python-api:8000");
     }
 
-    public async Task<object> ChamarLlama(string dadosProcessados, string prompt)
+    public async Task<object> ChamarLlama(string dadosProcessados, string prompt, string? history)
     {
         if (string.IsNullOrWhiteSpace(dadosProcessados))
             throw new ArgumentException("Dados não podem estar vazios", nameof(dadosProcessados));
+
+        var historyList = string.IsNullOrEmpty(history)
+            ? new List<object>()
+            : JsonSerializer.Deserialize<List<object>>(history, JsonOptions)
+              ?? new List<object>();
 
         // Desserializa os dados brutos para repassar como objeto
         var dados = JsonSerializer.Deserialize<JsonElement>(dadosProcessados, JsonOptions);
@@ -29,21 +34,20 @@ public class AiService
         var payload = new
         {
             dados = dados,
-            tipo_grafico = ExtrairTipoGrafico(prompt)
+            prompt = prompt,
+            tipo_grafico = ExtrairTipoGrafico(prompt),
+            history = historyList
         };
 
         for (int tentativa = 1; tentativa <= MaxTentativas; tentativa++)
         {
             try
             {
-                Console.WriteLine($"Tentativa {tentativa}/{MaxTentativas}...");
-
                 var response = await _http.PostAsJsonAsync("/chat", payload, JsonOptions);
                 response.EnsureSuccessStatusCode();
 
                 var chartData = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
 
-                Console.WriteLine("✅ JSON recebido com sucesso!");
                 return ConstruirResposta(chartData);
             }
             catch (HttpRequestException ex)
@@ -79,7 +83,6 @@ public class AiService
 
     private async Task TratarErro(string tipo, string mensagem, int tentativa)
     {
-        Console.WriteLine($"⚠️ {tipo} (tentativa {tentativa}): {mensagem}");
         if (tentativa < MaxTentativas)
             await Task.Delay(DelayEntreRetry);
     }

@@ -1,5 +1,11 @@
 from typing import Any, Dict, List
 from pydantic import BaseModel
+from typing import Literal
+
+
+class HistoryMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
 
 
 class PreparareResponse(BaseModel):
@@ -30,6 +36,8 @@ class SaudeResponse(BaseModel):
 class ChatRequest(BaseModel):
     dados: dict
     tipo_grafico: str = "auto"
+    prompt: str = ""
+    history: List[HistoryMessage] = []
 
 
 class IngestRequest(BaseModel):
