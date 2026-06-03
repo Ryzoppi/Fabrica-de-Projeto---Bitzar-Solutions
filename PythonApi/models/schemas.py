@@ -38,6 +38,7 @@ class ChatRequest(BaseModel):
     tipo_grafico: str = "auto"
     prompt: str = ""
     history: List[HistoryMessage] = []
+    explain: bool = False
 
 
 class IngestRequest(BaseModel):

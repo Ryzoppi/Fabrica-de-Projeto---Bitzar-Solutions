@@ -1,3 +1,4 @@
+import ReactMarkdown from 'react-markdown'
 import { Box, CircularProgress, Typography } from '@mui/material'
 import { AttachmentChip, ChartsBlock } from './components'
 
@@ -54,6 +55,39 @@ const ChatMessages = ({ chatHistory, isLoading }) => (
               {isCharts ? (
                 <Box sx={{ minWidth: { xs: '280px', md: '500px' } }}>
                   <ChartsBlock charts={msg.content} />
+
+                  {msg.explanation && (
+                    <Box
+                      sx={{
+                        mt: 1.5,
+                        pt: 1.5,
+                        borderTop: '1px solid #3F3F3F',
+                        color: '#d1d5db',
+                        fontSize: '0.875rem',
+                        lineHeight: 1.6,
+                        '& h1, & h2, & h3': {
+                          color: '#f9fafb',
+                          mt: 1.5,
+                          mb: 0.5,
+                          fontSize: '0.95rem',
+                          fontWeight: 600,
+                        },
+                        '& ul, & ol': { pl: 2.5, mb: 1 },
+                        '& li': { mb: 0.25 },
+                        '& p': { mb: 0.75 },
+                        '& strong': { color: '#f9fafb' },
+                        '& code': {
+                          backgroundColor: 'rgba(255,255,255,0.08)',
+                          borderRadius: '4px',
+                          px: 0.5,
+                          fontSize: '0.8rem',
+                          fontFamily: 'monospace',
+                        },
+                      }}
+                    >
+                      <ReactMarkdown>{msg.explanation}</ReactMarkdown>
+                    </Box>
+                  )}
                 </Box>
               ) : (
                 <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>

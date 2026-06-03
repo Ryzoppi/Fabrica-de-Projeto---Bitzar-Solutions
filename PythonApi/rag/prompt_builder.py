@@ -1,5 +1,5 @@
 import json
-from rag.retriever import buscar_chunks
+# from rag.retriever import buscar_chunks
 
 
 def construir_prompt(
@@ -11,16 +11,16 @@ def construir_prompt(
         if usuarios:
             ultimo_pedido = usuarios[-1].get("content", "")
 
-    query_rag = (
-        f"{prompt} — gráfico {tipo_grafico}"
-        if prompt.strip()
-        else f"definições e regras de negócio para gráfico {tipo_grafico}"
-    )
+    # query_rag = (
+    #     f"{prompt} — gráfico {tipo_grafico}"
+    #     if prompt.strip()
+    #     else f"definições e regras de negócio para gráfico {tipo_grafico}"
+    # )
 
-    contextos = buscar_chunks(query_rag, top_k=3)
-    contexto_str = (
-        "\n\n".join(contextos) if contextos else "Nenhum contexto adicional disponível."
-    )
+    # contextos = buscar_chunks(query_rag, top_k=3)
+    # contexto_str = (
+    #     "\n\n".join(contextos) if contextos else "Nenhum contexto adicional disponível."
+    # )
 
     foco = ""
     if prompt.strip():
@@ -36,9 +36,6 @@ def construir_prompt(
         )
 
     return f"""
-CONTEXTO DE NEGÓCIO:
-{contexto_str}
-
 DADOS RECEBIDOS:
 {json.dumps(dados, ensure_ascii=False, indent=2)}
 
@@ -55,7 +52,7 @@ INSTRUÇÕES DE ANÁLISE:
    - Comparação por categoria: agrupe por categoria (use "bar")
    - Comparação por região: agrupe por regiao (use "bar" ou "pie")
    - Lucratividade: cruze receita vs custo (use "bar" agrupado ou "line")
-   - Ranking ou proporção: participação de cada grupo no total (use "pie")
+   - Ranking ou proporção: participação de cada grupo no total (use "pie" ou "donut")
 4. Para cada gráfico:
    - Use um "title" descritivo que explique o que está sendo comparado
    - Escolha o "chartType" mais adequado para aquele cruzamento
@@ -63,11 +60,12 @@ INSTRUÇÕES DE ANÁLISE:
    - Cada "series" representa uma métrica ou dimensão diferente
 5. Se tipo_grafico não for "auto", inclua pelo menos um gráfico desse tipo
 6. Não invente dados — use apenas os valores presentes nos dados recebidos
-7. Agregue (some ou calcule média) quando houver múltiplos registros para o mesmo grupo
+7. Agregue SEMPRE por SOMA quando houver múltiplos registros para o mesmo grupo (ex: receita total por região = soma de todas as receitas daquela região). NUNCA use média, a menos que o prompt do usuário peça explicitamente.
 8. Cada série deve ter nome descritivo (ex: 'Receita', 'Custo') — NUNCA use 'series-1', 'series-2'
-9. Não repita gráficos com os mesmos dados — cada chart deve mostrar uma perspectiva diferente
+9. Cada gráfico DEVE mostrar uma combinação única de (métrica, dimensão, tipo). PROIBIDO repetir o mesmo par — por exemplo, se já gerou "Receita por Região" como bar, NÃO gere novamente como pie com os mesmos dados. Verifique cada gráfico antes de adicionar.
 10. Eixo X deve conter agrupamentos (datas, regiões, categorias) — NUNCA nomes de métricas
 11. Evolução temporal só é válida se houver pelo menos 2 datas distintas nos dados
+12. Antes de retornar, revise os gráficos gerados e remova qualquer duplicata. Dois gráficos são duplicatas se mostram a mesma métrica na mesma dimensão, mesmo que o chartType seja diferente.
 
 EXEMPLO de cruzamento esperado:
 - Gráfico 1: Receita total por Categoria (bar)

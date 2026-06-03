@@ -60,6 +60,7 @@ const Chat = () => {
         role: 'ia',
         type: dataPath?.type,
         message: dataPath?.message,
+        explanation: dataPath?.explanation ?? null,
         content: charts.map((chart) => ({
           ...chart,
           id: chart.id ?? crypto.randomUUID(),

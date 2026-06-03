@@ -36,7 +36,8 @@ public class AiService
             dados = dados,
             prompt = prompt,
             tipo_grafico = ExtrairTipoGrafico(prompt),
-            history = historyList
+            history = historyList,
+            explain = true
         };
 
         for (int tentativa = 1; tentativa <= MaxTentativas; tentativa++)
@@ -98,7 +99,10 @@ public class AiService
                 : (object)Array.Empty<object>(),
             message = chartData.TryGetProperty("title", out var title)
                 ? title.GetString() ?? "Análise concluída"
-                : "Análise concluída"
+                : "Análise concluída",
+            explanation = chartData.TryGetProperty("explanation", out var explanation)
+                ? explanation.GetString()
+                : null
         }
     };
 
