@@ -13,10 +13,21 @@ import {
 
 import services from 'services'
 
+const incomingCharts = [
+  // ... seu array de charts mockados
+]
+
 const Chat = () => {
-  const [chatHistory, setChatHistory] = useState([])
+  const [chatHistory, setChatHistory] = useState([{
+    role: 'ia',
+    content: incomingCharts,
+    message: "",
+    type: "charts",
+  }])
   const [isLoading, setIsLoading] = useState(false)
 
+  // Adicione isto para controlar o cancelamento
+  const abortControllerRef = useRef(null)
   const fileInputRef = useRef(null)
   const formMethods = useForm({ defaultValues: { files: [], prompt: '' } })
   const { handleSubmit, reset } = formMethods
@@ -24,17 +35,9 @@ const Chat = () => {
   const onAttachClick = () => fileInputRef.current.click()
 
   const onSubmit = async ({ prompt, files }) => {
-    if (!prompt.trim() && files.length === 0) return
+    console.log('Enviando:', { prompt, files })
 
-    const history = chatHistory
-      .filter((msg) => msg.role === 'user' || msg.role === 'ia')
-      .slice(-10) // Últimas 10 mensagens
-      .map((msg) => ({
-        role: msg.role === 'ia' ? 'assistant' : 'user',
-        content:
-          msg.role === 'ia' ? (msg.rawForHistory ?? '') : (msg.content ?? ''),
-      }))
-      .filter((msg) => msg.content !== '')
+    if (!prompt.trim() && files.length === 0) return
 
     const userMessage = {
       role: 'user',
@@ -46,43 +49,55 @@ const Chat = () => {
     reset({ files: [], prompt: '' })
     setIsLoading(true)
 
+    // Crie um novo AbortController para esta requisição
+    abortControllerRef.current = new AbortController()
+
     try {
       const response = await services.modules.chat.sendMessage({
         prompt,
         files,
-        history,
+        signal: abortControllerRef.current.signal, // Passe o signal
       })
+      console.log('Resposta recebida:', response)
 
       const dataPath = response?.data?.data
-      const charts = dataPath?.charts ?? []
 
       const iaMessage = {
         role: 'ia',
-        type: dataPath?.type,
+        content: dataPath?.charts?.data?.charts || dataPath?.charts || [],
         message: dataPath?.message,
-        explanation: dataPath?.explanation ?? null,
-        content: charts.map((chart) => ({
-          ...chart,
-          id: chart.id ?? crypto.randomUUID(),
-          type: chart.type ?? chart.chartType,
-        })),
-        rawForHistory: JSON.stringify({
-          charts: dataPath?.charts ?? [],
-        }),
+        type: dataPath?.type,
       }
-
       setChatHistory((prev) => [...prev, iaMessage])
     } catch (error) {
-      console.error('Erro:', error)
-      const errorMessage = {
-        role: 'ia',
-        content: 'Ocorreu um erro ao processar sua solicitação.',
+      if (error.name === 'AbortError') {
+        console.log('Requisição cancelada pelo usuário')
+        const cancelMessage = {
+          role: 'ia',
+          content: 'Criação de gráficos cancelada.',
+        }
+        setChatHistory((prev) => [...prev, cancelMessage])
+      } else {
+        console.error('Erro:', error)
+        const errorMessage = {
+          role: 'ia',
+          content: 'Ocorreu um erro ao processar sua solicitação.',
+        }
+        setChatHistory((prev) => [...prev, errorMessage])
       }
-      setChatHistory((prev) => [...prev, errorMessage])
     } finally {
+      setIsLoading(false)
+      abortControllerRef.current = null
+    }
+  }
+
+  const handleCancel = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
       setIsLoading(false)
     }
   }
+
 
   return (
     <MainContainer>
@@ -96,7 +111,11 @@ const Chat = () => {
             gap: 2,
           }}
         >
-          <ChatMessages chatHistory={chatHistory} isLoading={isLoading} />
+          <ChatMessages 
+            chatHistory={chatHistory} 
+            isLoading={isLoading}
+            onCancel={handleCancel}
+          />
         </Grid>
       </MainBox>
 
@@ -109,6 +128,7 @@ const Chat = () => {
             <PromptField
               onAttachClick={onAttachClick}
               onSubmit={handleSubmit(onSubmit)}
+              isLoading={isLoading}
             />
           </FormProvider>
         </InputContainer>

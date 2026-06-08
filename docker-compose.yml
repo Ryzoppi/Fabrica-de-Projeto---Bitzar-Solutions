@@ -47,6 +47,12 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
+    deploy:
+      resources:
+        limits:
+          memory: 6g
+        reservations:
+          memory: 4g  
     volumes:
       - ollama_data:/root/.ollama
       - ./PythonApi:/workspace

@@ -73,18 +73,27 @@ const mergeChartConfig = (customOptions = {}) => {
 }
 
 const initializeCharts = (charts) =>
-  charts.map((chart) => {
+  charts.map((chart, index) => {
+    console.log("initializeCharts recebeu:", charts)
     const type = chart.type ?? chart.chartType
     const isPolar = ['pie', 'donut'].includes(type)
 
     const series = isPolar ? chart.series.flatMap((s) => s.data) : chart.series
 
     return {
+      id: chart.id ?? `chart-${index}`,
       ...chart,
       type,
       series,
       options: mergeChartConfig({
         ...chart.options,
+        ...(type === 'bar' && {
+          plotOptions: {
+            bar: {
+              distributed: true,
+            },
+          },
+        }),
         ...(isPolar && { labels: chart.categories }),
         chart: { type },
         xaxis: isPolar ? {} : { categories: chart.categories },
@@ -92,7 +101,7 @@ const initializeCharts = (charts) =>
     }
   })
 
-const SortableChart = ({ chart, allCharts, onApply, cols }) => {
+const SortableChart = ({ chart, allCharts, onApply, cols, onColorChange }) => {
   const {
     attributes,
     listeners,
@@ -119,13 +128,19 @@ const SortableChart = ({ chart, allCharts, onApply, cols }) => {
         allCharts={allCharts}
         onApply={onApply}
         dragListeners={listeners}
+        onColorChange={onColorChange}
       />
     </Grid>
   )
 }
 
 const ChartsBlock = ({ charts: initialCharts }) => {
+  console.log("initialCharts:", initialCharts)
   const [charts, setCharts] = useState(() => initializeCharts(initialCharts))
+  console.log(
+  charts.map(c => c.id)
+)
+  console.log("charts:", charts)
   const [ready, setReady] = useState(false)
 
   const sensors = useSensors(
@@ -143,6 +158,46 @@ const ChartsBlock = ({ charts: initialCharts }) => {
     })
   }
 
+const handleColorChange = (chartId, colorIndex, newColor) => {
+  const DEFAULT_COLORS = [
+  '#2563eb',
+  '#10b981',
+  '#f59e0b',
+  '#ef4444',
+  '#8b5cf6',
+  '#06b6d4',
+  '#84cc16',
+  '#f97316',
+]
+  setCharts(prev =>
+    prev.map(chart => {
+      if (chart.id !== chartId) return chart
+
+      const totalColors =
+        chart.categories?.length ||
+        chart.options?.labels?.length ||
+        chart.series?.length ||
+        0
+
+      const colors = Array.from(
+        { length: totalColors },
+        (_, i) =>
+          chart.options?.colors?.[i] ??
+          DEFAULT_COLORS[i % DEFAULT_COLORS.length]
+      )
+
+      colors[colorIndex] = newColor
+
+      return {
+        ...chart,
+        options: {
+          ...chart.options,
+          colors,
+        },
+      }
+    })
+  )
+}
   const handleApply = ({ chartId, newType, newOrder }) => {
     const updated = charts.map((c) => {
       if (c.id !== chartId) return c
@@ -255,6 +310,7 @@ const ChartsBlock = ({ charts: initialCharts }) => {
                   allCharts={charts}
                   onApply={handleApply}
                   cols={cols}
+                  onColorChange={handleColorChange}
                 />
               ))
             : charts.map((_, i) => (

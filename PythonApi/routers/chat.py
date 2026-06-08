@@ -104,11 +104,11 @@ async def chat(req: ChatRequest):
 
         chart_data["charts"] = remover_duplicatas(chart_data.get("charts", []))
 
-        # Modelo 2: explicação em paralelo só se solicitado
-        if req.explain:
-            chart_data["explanation"] = await loop.run_in_executor(
-                _executor, _chamar_explain, client, chart_data, req.prompt
-            )
+        # # Modelo 2: explicação em paralelo só se solicitado
+        # if req.explain:
+        #     chart_data["explanation"] = await loop.run_in_executor(
+        #         _executor, _chamar_explain, client, chart_data, req.prompt
+        #     )
 
         return chart_data
 
@@ -117,4 +117,7 @@ async def chat(req: ChatRequest):
     except ollama.ResponseError as e:
         raise HTTPException(status_code=500, detail=f"Ollama error: {e.error}")
     except Exception as e:
+        print(f"[ERRO GERAL] {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")

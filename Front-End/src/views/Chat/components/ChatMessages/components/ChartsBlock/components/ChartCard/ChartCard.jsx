@@ -8,6 +8,7 @@ import {
 import Chart from 'react-apexcharts'
 
 import { ChartConfigModal } from './components'
+import { ChartColorsModal } from './components'
 
 const isPolar = (type) => ['pie', 'donut'].includes(type)
 
@@ -33,10 +34,34 @@ const normalizeSeries = (series, type) => {
   })
 }
 
-const ChartCard = ({ chart, allCharts, onApply, dragListeners }) => {
+const ChartCard = ({
+  chart,
+  allCharts,
+  onApply,
+  dragListeners,
+  onColorChange,
+}) => {
   const [modalOpen, setModalOpen] = useState(false)
+  const [colorModalOpen, setColorModalOpen] = useState(false)
+  const [selectedBar, setSelectedBar] = useState(null)
 
   const safeSeries = normalizeSeries(chart.series, chart.type)
+
+  const chartOptions = {
+    ...(chart.options ?? {}),
+
+    chart: {
+      ...(chart.options?.chart ?? {}),
+
+      events: {
+        dataPointSelection: (event, chartContext, config) => {
+          setSelectedBar(config.dataPointIndex)
+          setColorModalOpen(true)
+        },
+      },
+    },
+  }
+  console.log('ChartCard:', chart)
 
   return (
     <>
@@ -89,7 +114,7 @@ const ChartCard = ({ chart, allCharts, onApply, dragListeners }) => {
 
         <Chart
           key={`${chart.id}-${chart.type}`}
-          options={chart.options ?? {}}
+          options={chartOptions}
           series={safeSeries}
           type={chart.type}
           width="100%"
@@ -104,6 +129,14 @@ const ChartCard = ({ chart, allCharts, onApply, dragListeners }) => {
           chart={chart}
           allCharts={allCharts}
           onApply={onApply}
+        />
+      )}
+      {colorModalOpen && (
+        <ChartColorsModal
+          open={colorModalOpen}
+          onClose={() => setColorModalOpen(false)}
+          chart={chart}
+          onColorChange={onColorChange}
         />
       )}
     </>
