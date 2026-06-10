@@ -48,3 +48,12 @@
 /home/cotoco/Documentos/Fabrica-de-Projeto---Bitzar-Solutions/Api/bin/Debug/net10.0/NSwag.Generation.dll
 /home/cotoco/Documentos/Fabrica-de-Projeto---Bitzar-Solutions/Api/bin/Debug/net10.0/NSwag.Generation.AspNetCore.dll
 /home/cotoco/Documentos/Fabrica-de-Projeto---Bitzar-Solutions/Api/bin/Debug/net10.0/YamlDotNet.dll
+C:\Users\Guilherme\Documents\Fabrica-de-Projeto---Bitzar-Solutions\Api\obj\Debug\net10.0\Api.csproj.AssemblyReference.cache
+C:\Users\Guilherme\Documents\Fabrica-de-Projeto---Bitzar-Solutions\Api\obj\Debug\net10.0\rpswa.dswa.cache.json
+C:\Users\Guilherme\Documents\Fabrica-de-Projeto---Bitzar-Solutions\Api\obj\Debug\net10.0\Api.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Guilherme\Documents\Fabrica-de-Projeto---Bitzar-Solutions\Api\obj\Debug\net10.0\Api.AssemblyInfoInputs.cache
+C:\Users\Guilherme\Documents\Fabrica-de-Projeto---Bitzar-Solutions\Api\obj\Debug\net10.0\Api.AssemblyInfo.cs
+C:\Users\Guilherme\Documents\Fabrica-de-Projeto---Bitzar-Solutions\Api\obj\Debug\net10.0\Api.csproj.CoreCompileInputs.cache
+C:\Users\Guilherme\Documents\Fabrica-de-Projeto---Bitzar-Solutions\Api\obj\Debug\net10.0\Api.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\Guilherme\Documents\Fabrica-de-Projeto---Bitzar-Solutions\Api\obj\Debug\net10.0\Api.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\Guilherme\Documents\Fabrica-de-Projeto---Bitzar-Solutions\Api\obj\Debug\net10.0\Api.sourcelink.json

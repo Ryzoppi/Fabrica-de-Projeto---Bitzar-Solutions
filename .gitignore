@@ -1,4 +1,5 @@
 .venv
+.env
 
 [Bb]in/
 [Ob]j/
@@ -22,3 +23,6 @@ Thumbs.db
 
 node_modules/
 .nuget/
+
+Api/obj
+Api/publish

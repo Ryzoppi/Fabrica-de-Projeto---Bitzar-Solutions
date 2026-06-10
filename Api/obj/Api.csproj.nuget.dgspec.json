@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Guilherme\\OneDrive\\Documentos\\Fabrica-de-Projeto---Bitzar-Solutions\\Api\\Api.csproj": {}
+    "D:\\Users\\Hugo\\Documents\\GitHub\\Fabrica-de-Projeto-Bitzar-Solutions\\Api\\Api.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Guilherme\\OneDrive\\Documentos\\Fabrica-de-Projeto---Bitzar-Solutions\\Api\\Api.csproj": {
+    "D:\\Users\\Hugo\\Documents\\GitHub\\Fabrica-de-Projeto-Bitzar-Solutions\\Api\\Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Guilherme\\OneDrive\\Documentos\\Fabrica-de-Projeto---Bitzar-Solutions\\Api\\Api.csproj",
+        "projectUniqueName": "D:\\Users\\Hugo\\Documents\\GitHub\\Fabrica-de-Projeto-Bitzar-Solutions\\Api\\Api.csproj",
         "projectName": "Api",
-        "projectPath": "C:\\Users\\Guilherme\\OneDrive\\Documentos\\Fabrica-de-Projeto---Bitzar-Solutions\\Api\\Api.csproj",
-        "packagesPath": "C:\\Users\\Guilherme\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Guilherme\\OneDrive\\Documentos\\Fabrica-de-Projeto---Bitzar-Solutions\\Api\\obj\\",
+        "projectPath": "D:\\Users\\Hugo\\Documents\\GitHub\\Fabrica-de-Projeto-Bitzar-Solutions\\Api\\Api.csproj",
+        "packagesPath": "C:\\Users\\Hugo\\.nuget\\packages\\",
+        "outputPath": "D:\\Users\\Hugo\\Documents\\GitHub\\Fabrica-de-Projeto-Bitzar-Solutions\\Api\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Guilherme\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Hugo\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -44,15 +44,23 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net10.0": {
           "targetAlias": "net10.0",
           "dependencies": {
+            "EPPlus": {
+              "target": "Package",
+              "version": "[8.5.4, )"
+            },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[10.0.3, )"
+            },
+            "MiniExcel": {
+              "target": "Package",
+              "version": "[1.43.1, )"
             },
             "NSwag.AspNetCore": {
               "target": "Package",
@@ -82,7 +90,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",
