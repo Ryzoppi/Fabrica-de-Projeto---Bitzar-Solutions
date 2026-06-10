@@ -19,7 +19,8 @@ public class DashboardController : ControllerBase
     public async Task<IActionResult> Processar(
       [FromForm] List<IFormFile> arquivos,
       [FromForm] string prompt,
-      [FromForm] string? history
+      [FromForm] string? history,
+      CancellationToken cancellationToken
     ) {
       try {
         if (arquivos == null || arquivos.Count == 0) return BadRequest(new { erro = "Arquivo não fornecido" });
@@ -31,6 +32,8 @@ public class DashboardController : ControllerBase
 
         var resultado = await _aiService.ChamarLlama(resultadoPython, prompt, history);
         return Ok(resultado);
+      } catch (OperationCanceledException) {
+          return StatusCode(499, new { erro = "Requisição cancelada pelo cliente" });
       } catch (HttpRequestException ex) {
           return StatusCode(503, new { erro = "Serviço Python indisponível", detalhes = ex.Message });
       } catch (Exception ex) {

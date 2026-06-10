@@ -18,6 +18,17 @@ import { CSS } from '@dnd-kit/utilities'
 
 import { ChartCard } from './components'
 
+const DEFAULT_COLORS = [
+  '#2563eb',
+  '#10b981',
+  '#f59e0b',
+  '#ef4444',
+  '#8b5cf6',
+  '#06b6d4',
+  '#84cc16',
+  '#f97316',
+]
+
 const DEFAULT_CHART_CONFIG = {
   chart: {
     background: 'transparent',
@@ -74,11 +85,21 @@ const mergeChartConfig = (customOptions = {}) => {
 
 const initializeCharts = (charts) =>
   charts.map((chart, index) => {
-    console.log("initializeCharts recebeu:", charts)
     const type = chart.type ?? chart.chartType
     const isPolar = ['pie', 'donut'].includes(type)
-
     const series = isPolar ? chart.series.flatMap((s) => s.data) : chart.series
+
+    const totalColors = isPolar
+      ? (chart.categories ?? []).length
+      : type === 'bar'
+        ? (chart.categories ?? []).length
+        : (chart.series ?? []).length
+
+    const initialColors = Array.from(
+      { length: totalColors },
+      (_, i) =>
+        chart.options?.colors?.[i] ?? DEFAULT_COLORS[i % DEFAULT_COLORS.length],
+    )
 
     return {
       id: chart.id ?? `chart-${index}`,
@@ -87,13 +108,8 @@ const initializeCharts = (charts) =>
       series,
       options: mergeChartConfig({
         ...chart.options,
-        ...(type === 'bar' && {
-          plotOptions: {
-            bar: {
-              distributed: true,
-            },
-          },
-        }),
+        colors: initialColors,
+        ...(type === 'bar' && { plotOptions: { bar: { distributed: true } } }),
         ...(isPolar && { labels: chart.categories }),
         chart: { type },
         xaxis: isPolar ? {} : { categories: chart.categories },
@@ -135,12 +151,7 @@ const SortableChart = ({ chart, allCharts, onApply, cols, onColorChange }) => {
 }
 
 const ChartsBlock = ({ charts: initialCharts }) => {
-  console.log("initialCharts:", initialCharts)
   const [charts, setCharts] = useState(() => initializeCharts(initialCharts))
-  console.log(
-  charts.map(c => c.id)
-)
-  console.log("charts:", charts)
   const [ready, setReady] = useState(false)
 
   const sensors = useSensors(
@@ -158,130 +169,108 @@ const ChartsBlock = ({ charts: initialCharts }) => {
     })
   }
 
-const handleColorChange = (chartId, colorIndex, newColor) => {
-  const DEFAULT_COLORS = [
-  '#2563eb',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#8b5cf6',
-  '#06b6d4',
-  '#84cc16',
-  '#f97316',
-]
-  setCharts(prev =>
-    prev.map(chart => {
-      if (chart.id !== chartId) return chart
+  const handleColorChange = (chartId, colorIndex, newColor) => {
+    setCharts((prev) =>
+      prev.map((chart) => {
+        if (chart.id !== chartId) return chart
 
-      const totalColors =
-        chart.categories?.length ||
-        chart.options?.labels?.length ||
-        chart.series?.length ||
-        0
+        const totalColors =
+          chart.categories?.length ||
+          chart.options?.labels?.length ||
+          chart.series?.length ||
+          0
 
-      const colors = Array.from(
-        { length: totalColors },
-        (_, i) =>
-          chart.options?.colors?.[i] ??
-          DEFAULT_COLORS[i % DEFAULT_COLORS.length]
-      )
-
-      colors[colorIndex] = newColor
-
-      return {
-        ...chart,
-        options: {
-          ...chart.options,
-          colors,
-        },
-      }
-    })
-  )
-}
-  const handleApply = ({ chartId, newType, newOrder }) => {
-    const updated = charts.map((c) => {
-      if (c.id !== chartId) return c
-
-      const currentIsPolar = ['pie', 'donut'].includes(c.type)
-      const nextIsPolar = ['pie', 'donut'].includes(newType)
-
-      // Cartesiano → Polar
-      if (!currentIsPolar && nextIsPolar) {
-        const categories = c.categories ?? c.options?.xaxis?.categories ?? []
-
-        const series = categories.map((_, i) =>
-          c.series.reduce((acc, s) => {
-            const point = s.data?.[i]
-            const val = typeof point === 'object' ? (point.y ?? point) : point
-            return acc + (Number(val) || 0)
-          }, 0),
+        const colors = Array.from(
+          { length: totalColors },
+          (_, i) =>
+            chart.options?.colors?.[i] ??
+            DEFAULT_COLORS[i % DEFAULT_COLORS.length],
         )
 
+        colors[colorIndex] = newColor
+
+        return {
+          ...chart,
+          options: {
+            ...chart.options,
+            colors,
+          },
+        }
+      }),
+    )
+  }
+  const handleApply = ({ chartId, newType, newOrder }) => {
+    setCharts((prev) => {
+      const updated = prev.map((c) => {
+        if (c.id !== chartId) return c
+
+        const currentIsPolar = ['pie', 'donut'].includes(c.type)
+        const nextIsPolar = ['pie', 'donut'].includes(newType)
+        const existingColors = c.options?.colors
+
+        if (!currentIsPolar && nextIsPolar) {
+          const categories = c.categories ?? c.options?.xaxis?.categories ?? []
+          const series = categories.map((_, i) =>
+            c.series.reduce((acc, s) => {
+              const point = s.data?.[i]
+              const val = typeof point === 'object' ? (point.y ?? point) : point
+              return acc + (Number(val) || 0)
+            }, 0),
+          )
+          return {
+            ...c,
+            type: newType,
+            series,
+            _originalSeries: c._originalSeries ?? c.series,
+            options: mergeChartConfig({
+              ...c.options,
+              colors: existingColors,
+              labels: categories,
+              chart: { ...c.options?.chart, type: newType },
+              xaxis: {},
+            }),
+          }
+        }
+
+        if (currentIsPolar && !nextIsPolar) {
+          const categories = c.options?.labels ?? c.categories ?? []
+          const series = c._originalSeries
+            ? c._originalSeries.map((s) => ({
+                ...s,
+                data: s.data.map((point) =>
+                  typeof point === 'object' ? (point.y ?? point) : point,
+                ),
+              }))
+            : [{ name: 'Valor', data: Array.isArray(c.series) ? c.series : [] }]
+
+          const { labels: _removed, ...cleanOptions } = c.options ?? {}
+          return {
+            ...c,
+            type: newType,
+            series,
+            _originalSeries: undefined,
+            options: mergeChartConfig({
+              ...cleanOptions,
+              colors: existingColors,
+              chart: { ...cleanOptions?.chart, type: newType },
+              xaxis: { categories },
+            }),
+          }
+        }
+
         return {
           ...c,
           type: newType,
-          series,
-          _originalSeries: c._originalSeries ?? c.series,
           options: mergeChartConfig({
             ...c.options,
-            labels: categories,
+            colors: existingColors,
             chart: { ...c.options?.chart, type: newType },
-            xaxis: {},
           }),
         }
-      }
+      })
 
-      // Polar → Cartesiano
-      if (currentIsPolar && !nextIsPolar) {
-        const categories =
-          c.options?.labels ??
-          c.categories ??
-          c.options?.xaxis?.categories ??
-          []
-
-        const series = c._originalSeries
-          ? c._originalSeries.map((s) => ({
-              ...s,
-              data: s.data.map((point) =>
-                typeof point === 'object' ? (point.y ?? point) : point,
-              ),
-            }))
-          : [
-              {
-                name: 'Valor',
-                data: (Array.isArray(c.series) ? c.series : []).map((val) =>
-                  typeof val === 'object' ? (val.y ?? val) : val,
-                ),
-              },
-            ]
-
-        const { labels: _removed, ...cleanOptions } = c.options ?? {}
-
-        return {
-          ...c,
-          type: newType,
-          series,
-          _originalSeries: undefined,
-          options: mergeChartConfig({
-            ...cleanOptions,
-            chart: { ...cleanOptions?.chart, type: newType },
-            xaxis: { categories },
-          }),
-        }
-      }
-
-      return {
-        ...c,
-        type: newType,
-        options: mergeChartConfig({
-          ...c.options,
-          chart: { ...c.options?.chart, type: newType },
-        }),
-      }
+      return newOrder.map((id) => updated.find((c) => c.id === id))
     })
-
-    const reordered = newOrder.map((id) => updated.find((c) => c.id === id))
-    setCharts(reordered)
   }
 
   const cols = Math.min(charts.length, 4)

@@ -7,8 +7,7 @@ import {
 } from '@mui/icons-material'
 import Chart from 'react-apexcharts'
 
-import { ChartConfigModal } from './components'
-import { ChartColorsModal } from './components'
+import { ChartConfigModal, ChartColorsModal } from './components'
 
 const isPolar = (type) => ['pie', 'donut'].includes(type)
 
@@ -61,7 +60,6 @@ const ChartCard = ({
       },
     },
   }
-  console.log('ChartCard:', chart)
 
   return (
     <>
@@ -113,7 +111,7 @@ const ChartCard = ({
         </Box>
 
         <Chart
-          key={`${chart.id}-${chart.type}`}
+          key={`${chart.id}-${chart.type}-${JSON.stringify(chart.options?.colors)}`}
           options={chartOptions}
           series={safeSeries}
           type={chart.type}
@@ -129,6 +127,7 @@ const ChartCard = ({
           chart={chart}
           allCharts={allCharts}
           onApply={onApply}
+          onColorChange={onColorChange}
         />
       )}
       {colorModalOpen && (
@@ -137,6 +136,7 @@ const ChartCard = ({
           onClose={() => setColorModalOpen(false)}
           chart={chart}
           onColorChange={onColorChange}
+          selectedBar={selectedBar}
         />
       )}
     </>

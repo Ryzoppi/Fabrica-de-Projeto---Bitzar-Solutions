@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 
 import { Box, Grid } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
+import axios from 'axios'
+
 import {
   AttachedItems,
   ChatMessages,
@@ -13,20 +15,10 @@ import {
 
 import services from 'services'
 
-const incomingCharts = [
-  // ... seu array de charts mockados
-]
-
 const Chat = () => {
-  const [chatHistory, setChatHistory] = useState([{
-    role: 'ia',
-    content: incomingCharts,
-    message: "",
-    type: "charts",
-  }])
+  const [chatHistory, setChatHistory] = useState([])
   const [isLoading, setIsLoading] = useState(false)
 
-  // Adicione isto para controlar o cancelamento
   const abortControllerRef = useRef(null)
   const fileInputRef = useRef(null)
   const formMethods = useForm({ defaultValues: { files: [], prompt: '' } })
@@ -35,9 +27,17 @@ const Chat = () => {
   const onAttachClick = () => fileInputRef.current.click()
 
   const onSubmit = async ({ prompt, files }) => {
-    console.log('Enviando:', { prompt, files })
-
     if (!prompt.trim() && files.length === 0) return
+
+    const history = chatHistory
+      .filter((msg) => msg.role === 'user' || msg.role === 'ia')
+      .slice(-10) // Últimas 10 mensagens
+      .map((msg) => ({
+        role: msg.role === 'ia' ? 'assistant' : 'user',
+        content:
+          msg.role === 'ia' ? (msg.rawForHistory ?? '') : (msg.content ?? ''),
+      }))
+      .filter((msg) => msg.content !== '')
 
     const userMessage = {
       role: 'user',
@@ -49,29 +49,37 @@ const Chat = () => {
     reset({ files: [], prompt: '' })
     setIsLoading(true)
 
-    // Crie um novo AbortController para esta requisição
     abortControllerRef.current = new AbortController()
 
     try {
       const response = await services.modules.chat.sendMessage({
         prompt,
         files,
-        signal: abortControllerRef.current.signal, // Passe o signal
+        history,
+        signal: abortControllerRef.current.signal,
       })
-      console.log('Resposta recebida:', response)
 
       const dataPath = response?.data?.data
+      const charts = dataPath?.charts ?? []
 
       const iaMessage = {
         role: 'ia',
-        content: dataPath?.charts?.data?.charts || dataPath?.charts || [],
-        message: dataPath?.message,
         type: dataPath?.type,
+        message: dataPath?.message,
+        explanation: dataPath?.explanation ?? null,
+        content: charts.map((chart) => ({
+          ...chart,
+          id: chart.id ?? crypto.randomUUID(),
+          type: chart.type ?? chart.chartType,
+        })),
+        rawForHistory: JSON.stringify({
+          charts: dataPath?.charts ?? [],
+        }),
       }
+
       setChatHistory((prev) => [...prev, iaMessage])
     } catch (error) {
-      if (error.name === 'AbortError') {
-        console.log('Requisição cancelada pelo usuário')
+      if (axios.isCancel(error)) {
         const cancelMessage = {
           role: 'ia',
           content: 'Criação de gráficos cancelada.',
@@ -92,12 +100,8 @@ const Chat = () => {
   }
 
   const handleCancel = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-      setIsLoading(false)
-    }
+    if (abortControllerRef.current) abortControllerRef.current.abort()
   }
-
 
   return (
     <MainContainer>
@@ -111,8 +115,8 @@ const Chat = () => {
             gap: 2,
           }}
         >
-          <ChatMessages 
-            chatHistory={chatHistory} 
+          <ChatMessages
+            chatHistory={chatHistory}
             isLoading={isLoading}
             onCancel={handleCancel}
           />
