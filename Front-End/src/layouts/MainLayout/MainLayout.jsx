@@ -6,8 +6,9 @@ const MainLayout = () => {
     <Box
       sx={{
         height: '100vh',
-        background:
-          'radial-gradient(circle at center, #484848 0%, #1D1D1D 40%, #000000 100%)',
+        backgroundColor: 'background.default',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <Outlet />

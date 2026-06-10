@@ -1,8 +1,7 @@
-import ReactMarkdown from 'react-markdown'
 import { Box, CircularProgress, Typography, IconButton } from '@mui/material'
 import { CloseRounded } from '@mui/icons-material'
 
-import { AttachmentChip, ChartsBlock } from './components'
+import { AttachmentChip, ChartsBlock, ExplanationBlock } from './components'
 
 const ChatMessages = ({ chatHistory, isLoading, onCancel }) => (
   <>
@@ -44,9 +43,9 @@ const ChatMessages = ({ chatHistory, isLoading, onCancel }) => (
             <Box
               sx={{
                 backgroundColor: isUser
-                  ? '#2563eb'
+                  ? '#0d9488'
                   : 'rgba(255, 255, 255, 0.05)',
-                color: '#fff',
+                color: isUser ? '#f0fdfb' : '#fff',
                 p: isCharts ? 1 : 2,
                 borderRadius: isUser ? '15px 15px 0 15px' : '15px 15px 15px 0',
                 border: isUser ? 'none' : '1px solid #3F3F3F',
@@ -56,39 +55,6 @@ const ChatMessages = ({ chatHistory, isLoading, onCancel }) => (
               {isCharts ? (
                 <Box sx={{ minWidth: { xs: '280px', md: '500px' } }}>
                   <ChartsBlock charts={msg.content} />
-
-                  {msg.explanation && (
-                    <Box
-                      sx={{
-                        mt: 1.5,
-                        pt: 1.5,
-                        borderTop: '1px solid #3F3F3F',
-                        color: '#d1d5db',
-                        fontSize: '0.875rem',
-                        lineHeight: 1.6,
-                        '& h1, & h2, & h3': {
-                          color: '#f9fafb',
-                          mt: 1.5,
-                          mb: 0.5,
-                          fontSize: '0.95rem',
-                          fontWeight: 600,
-                        },
-                        '& ul, & ol': { pl: 2.5, mb: 1 },
-                        '& li': { mb: 0.25 },
-                        '& p': { mb: 0.75 },
-                        '& strong': { color: '#f9fafb' },
-                        '& code': {
-                          backgroundColor: 'rgba(255,255,255,0.08)',
-                          borderRadius: '4px',
-                          px: 0.5,
-                          fontSize: '0.8rem',
-                          fontFamily: 'monospace',
-                        },
-                      }}
-                    >
-                      <ReactMarkdown>{msg.explanation}</ReactMarkdown>
-                    </Box>
-                  )}
                 </Box>
               ) : (
                 <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -96,6 +62,11 @@ const ChatMessages = ({ chatHistory, isLoading, onCancel }) => (
                 </Typography>
               )}
             </Box>
+          )}
+
+          {/* Explanation fora do card de gráficos */}
+          {isCharts && msg.explanation && (
+            <ExplanationBlock explanation={msg.explanation} />
           )}
         </Box>
       )

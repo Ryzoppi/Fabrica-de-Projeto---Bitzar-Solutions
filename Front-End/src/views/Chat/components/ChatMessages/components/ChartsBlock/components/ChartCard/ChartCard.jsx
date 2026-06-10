@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { Box, IconButton } from '@mui/material'
+import { Box, IconButton, Typography } from '@mui/material'
 import {
   Settings as SettingsIcon,
   DragIndicator as DragIndicatorIcon,
@@ -109,6 +109,20 @@ const ChartCard = ({
             <SettingsIcon fontSize="small" />
           </IconButton>
         </Box>
+
+        {chart.title && (
+          <Typography
+            sx={{
+              fontSize: '0.7rem',
+              color: '#444',
+              mb: 0.5,
+              px: 0.5,
+              userSelect: 'none',
+            }}
+          >
+            {chart.title}
+          </Typography>
+        )}
 
         <Chart
           key={`${chart.id}-${chart.type}-${JSON.stringify(chart.options?.colors)}`}

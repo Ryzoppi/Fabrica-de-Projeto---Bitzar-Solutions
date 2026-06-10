@@ -11,9 +11,21 @@ import {
   MainBox,
   MainContainer,
   PromptField,
+  SuggestionChips,
+  Topbar,
 } from './components'
 
 import services from 'services'
+
+const getLastFileName = (chatHistory) => {
+  for (let i = chatHistory.length - 1; i >= 0; i--) {
+    const msg = chatHistory[i]
+    if (msg.role === 'user' && msg.attachments?.length > 0) {
+      return msg.attachments[msg.attachments.length - 1]?.name ?? null
+    }
+  }
+  return null
+}
 
 const Chat = () => {
   const [chatHistory, setChatHistory] = useState([])
@@ -22,16 +34,18 @@ const Chat = () => {
   const abortControllerRef = useRef(null)
   const fileInputRef = useRef(null)
   const formMethods = useForm({ defaultValues: { files: [], prompt: '' } })
-  const { handleSubmit, reset } = formMethods
+  const { handleSubmit, reset, setValue } = formMethods
 
   const onAttachClick = () => fileInputRef.current.click()
+
+  const handleSuggestionSelect = (text) => setValue('prompt', text)
 
   const onSubmit = async ({ prompt, files }) => {
     if (!prompt.trim() && files.length === 0) return
 
     const history = chatHistory
       .filter((msg) => msg.role === 'user' || msg.role === 'ia')
-      .slice(-10) // Últimas 10 mensagens
+      .slice(-10)
       .map((msg) => ({
         role: msg.role === 'ia' ? 'assistant' : 'user',
         content:
@@ -103,8 +117,13 @@ const Chat = () => {
     if (abortControllerRef.current) abortControllerRef.current.abort()
   }
 
+  const isEmpty = chatHistory.length === 0
+  const fileName = getLastFileName(chatHistory)
+
   return (
     <MainContainer>
+      <Topbar fileName={fileName} />
+
       <MainBox>
         <Grid
           container
@@ -113,13 +132,20 @@ const Chat = () => {
             maxWidth: '80%',
             flexDirection: 'column',
             gap: 2,
+            flex: isEmpty ? 1 : 'unset',
           }}
         >
-          <ChatMessages
-            chatHistory={chatHistory}
-            isLoading={isLoading}
-            onCancel={handleCancel}
-          />
+          {isEmpty ? (
+            <Box sx={{ display: 'flex', flex: 1, width: '100%' }}>
+              <SuggestionChips onSelect={handleSuggestionSelect} />
+            </Box>
+          ) : (
+            <ChatMessages
+              chatHistory={chatHistory}
+              isLoading={isLoading}
+              onCancel={handleCancel}
+            />
+          )}
         </Grid>
       </MainBox>
 

@@ -19,14 +19,14 @@ import { CSS } from '@dnd-kit/utilities'
 import { ChartCard } from './components'
 
 const DEFAULT_COLORS = [
-  '#2563eb',
-  '#10b981',
+  '#0d9488',
+  '#14b8a6',
+  '#2dd4bf',
+  '#0891b2',
+  '#6366f1',
+  '#8b5cf6',
   '#f59e0b',
   '#ef4444',
-  '#8b5cf6',
-  '#06b6d4',
-  '#84cc16',
-  '#f97316',
 ]
 
 const DEFAULT_CHART_CONFIG = {
@@ -199,6 +199,7 @@ const ChartsBlock = ({ charts: initialCharts }) => {
       }),
     )
   }
+
   const handleApply = ({ chartId, newType, newOrder }) => {
     setCharts((prev) => {
       const updated = prev.map((c) => {
