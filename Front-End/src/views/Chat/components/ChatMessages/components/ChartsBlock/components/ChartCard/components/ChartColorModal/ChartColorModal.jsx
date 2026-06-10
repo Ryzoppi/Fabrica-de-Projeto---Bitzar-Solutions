@@ -1,21 +1,13 @@
-import {
-  Modal,
-  Paper,
-  Typography,
-  Box,
-} from '@mui/material'
+import { Modal, Paper, Typography, Box } from '@mui/material'
 
 const ChartColorsModal = ({
   open,
   onClose,
   chart,
   onColorChange,
+  selectedBar,
 }) => {
-
-  const labels =
-    chart.categories ??
-    chart.options?.labels ??
-    []
+  const labels = chart.categories ?? chart.options?.labels ?? []
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -31,10 +23,7 @@ const ChartColorsModal = ({
           color: '#fff',
         }}
       >
-        <Typography
-          variant="h6"
-          sx={{ mb: 2 }}
-        >
+        <Typography variant="h6" sx={{ mb: 2 }}>
           Alterar cores
         </Typography>
 
@@ -46,25 +35,21 @@ const ChartColorsModal = ({
               justifyContent: 'space-between',
               alignItems: 'center',
               mb: 1,
+              bgcolor:
+                index === selectedBar ? 'rgba(37,99,235,0.15)' : 'transparent',
+              borderRadius: 1,
+              border:
+                index === selectedBar
+                  ? '1px solid #2563eb'
+                  : '1px solid transparent',
             }}
           >
-            <Typography>
-              {label}
-            </Typography>
+            <Typography>{label}</Typography>
 
             <input
               type="color"
-              value={
-                chart.options?.colors?.[index] ??
-                '#2563eb'
-              }
-              onChange={(e) =>
-                onColorChange(
-                  chart.id,
-                  index,
-                  e.target.value,
-                )
-              }
+              value={chart.options?.colors?.[index] ?? '#2563eb'}
+              onChange={(e) => onColorChange(chart.id, index, e.target.value)}
             />
           </Box>
         ))}

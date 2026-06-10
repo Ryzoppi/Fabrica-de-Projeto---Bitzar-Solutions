@@ -25,10 +25,15 @@ const CHART_TYPES = [
   { value: 'donut', label: 'Donut', Icon: DonutLargeIcon },
 ]
 
-const ChartConfigModal = ({ open, onClose, chart, allCharts, onApply, onColorChange, selectedBar }) => {
-  console.log(chart)
+const ChartConfigModal = ({
+  open,
+  onClose,
+  chart,
+  allCharts,
+  onApply,
+  onColorChange,
+}) => {
   const [selectedType, setSelectedType] = useState(chart.type)
-  
 
   const handleApply = () => {
     onApply({
@@ -39,31 +44,34 @@ const ChartConfigModal = ({ open, onClose, chart, allCharts, onApply, onColorCha
     onClose()
   }
 
-const getColorTargets = () => {
-  const type = chart.type
+  const getColorTargets = () => {
+    const type = chart.type
 
-  if (['pie', 'donut'].includes(type)) {
-    return (
-      chart.options?.labels ??
-      chart.categories ??
-      []
-    ).map((label, index) => ({
-      label,
-      index,
-    }))
+    if (['pie', 'donut'].includes(type)) {
+      return (chart.options?.labels ?? chart.categories ?? []).map(
+        (label, index) => ({
+          label,
+          index,
+        }),
+      )
+    }
+
+    if (type === 'bar') {
+      return (chart.categories ?? chart.options?.xaxis?.categories ?? []).map(
+        (label, index) => ({
+          label,
+          index,
+        }),
+      )
+    }
+
+    return (Array.isArray(chart.series) ? chart.series : []).map(
+      (s, index) => ({
+        label: s.name ?? `Série ${index + 1}`,
+        index,
+      }),
+    )
   }
-
-  const categories =
-    chart.categories ??
-    chart.options?.xaxis?.categories ??
-    []
-
-  return categories.map((label, index) => ({
-    label,
-    index,
-  }))
-}
-console.log('ChartConfigModal:', chart)
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -88,59 +96,49 @@ console.log('ChartConfigModal:', chart)
           Tipo de gráfico
         </Typography>
 
-<Typography
-  variant="subtitle1"
-  sx={{
-    mt: 3,
-    mb: 2,
-    color: '#fff',
-    fontWeight: 600,
-  }}
->
-  Cores
-</Typography>
+        <Typography
+          variant="subtitle1"
+          sx={{
+            mt: 3,
+            mb: 2,
+            color: '#fff',
+            fontWeight: 600,
+          }}
+        >
+          Cores
+        </Typography>
 
-<Box
-  sx={{
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 1.5,
-    mb: 3,
-  }}
->
-  {getColorTargets().map(item => (
-    <Box
-      key={item.index}
-      sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-      }}
-    >
-      <Typography
-        variant="body2"
-        sx={{ color: '#aaa' }}
-      >
-        {item.label}
-      </Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1.5,
+            mb: 3,
+          }}
+        >
+          {getColorTargets().map((item) => (
+            <Box
+              key={item.index}
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <Typography variant="body2" sx={{ color: '#aaa' }}>
+                {item.label}
+              </Typography>
 
-      <input
-        type="color"
-        value={
-          chart.options?.colors?.[item.index] ??
-          '#2563eb'
-        }
-        onChange={(e) =>
-          onColorChange(
-            chart.id,
-            item.index,
-            e.target.value,
-          )
-        }
-      />
-    </Box>
-    ))}
-    </Box>
+              <input
+                type="color"
+                value={chart.options?.colors?.[item.index] ?? '#2563eb'}
+                onChange={(e) =>
+                  onColorChange(chart.id, item.index, e.target.value)
+                }
+              />
+            </Box>
+          ))}
+        </Box>
 
         <ToggleButtonGroup
           value={selectedType}
