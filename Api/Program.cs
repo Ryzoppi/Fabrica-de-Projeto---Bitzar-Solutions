@@ -37,4 +37,14 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/processar")
+    {
+        context.Response.Headers["Cache-Control"] = "no-cache";
+        context.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpResponseBodyFeature>()?.DisableBuffering();
+    }
+    await next();
+});
+
 app.Run();
