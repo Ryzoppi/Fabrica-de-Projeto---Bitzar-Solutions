@@ -1,9 +1,7 @@
 import { useRef, useState } from 'react'
-
 import { Box, Grid } from '@mui/material'
 import { FormProvider, useForm } from 'react-hook-form'
 import axios from 'axios'
-
 import {
   AttachedItems,
   ChatMessages,
@@ -14,7 +12,6 @@ import {
   SuggestionChips,
   Topbar,
 } from './components'
-
 import services from 'services'
 
 const getLastFileName = (chatHistory) => {
@@ -30,6 +27,7 @@ const getLastFileName = (chatHistory) => {
 const Chat = () => {
   const [chatHistory, setChatHistory] = useState([])
   const [isLoading, setIsLoading] = useState(false)
+  const [iaStatus, setIaStatus] = useState('') 
 
   const abortControllerRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -48,8 +46,7 @@ const Chat = () => {
       .slice(-10)
       .map((msg) => ({
         role: msg.role === 'ia' ? 'assistant' : 'user',
-        content:
-          msg.role === 'ia' ? (msg.rawForHistory ?? '') : (msg.content ?? ''),
+        content: msg.role === 'ia' ? (msg.rawForHistory ?? '') : (msg.content ?? ''),
       }))
       .filter((msg) => msg.content !== '')
 
@@ -62,6 +59,7 @@ const Chat = () => {
     setChatHistory((prev) => [...prev, userMessage])
     reset({ files: [], prompt: '' })
     setIsLoading(true)
+    setIaStatus('Preparando dados...') 
 
     abortControllerRef.current = new AbortController()
 
@@ -71,6 +69,7 @@ const Chat = () => {
         files,
         history,
         signal: abortControllerRef.current.signal,
+        onStatus: (status) => setIaStatus(status), 
       })
 
       const dataPath = response?.data?.data
@@ -86,29 +85,20 @@ const Chat = () => {
           id: chart.id ?? crypto.randomUUID(),
           type: chart.type ?? chart.chartType,
         })),
-        rawForHistory: JSON.stringify({
-          charts: dataPath?.charts ?? [],
-        }),
+        rawForHistory: JSON.stringify({ charts: dataPath?.charts ?? [] }),
       }
 
       setChatHistory((prev) => [...prev, iaMessage])
     } catch (error) {
-      if (axios.isCancel(error)) {
-        const cancelMessage = {
-          role: 'ia',
-          content: 'Criação de gráficos cancelada.',
-        }
-        setChatHistory((prev) => [...prev, cancelMessage])
+      if (axios.isCancel(error) || error.name === 'AbortError') {
+        setChatHistory((prev) => [...prev, { role: 'ia', content: 'Criação de gráficos cancelada.' }])
       } else {
         console.error('Erro:', error)
-        const errorMessage = {
-          role: 'ia',
-          content: 'Ocorreu um erro ao processar sua solicitação.',
-        }
-        setChatHistory((prev) => [...prev, errorMessage])
+        setChatHistory((prev) => [...prev, { role: 'ia', content: 'Ocorreu um erro ao processar sua solicitação.' }])
       }
     } finally {
       setIsLoading(false)
+      setIaStatus('')
       abortControllerRef.current = null
     }
   }
@@ -144,14 +134,13 @@ const Chat = () => {
               chatHistory={chatHistory}
               isLoading={isLoading}
               onCancel={handleCancel}
+              iaStatus={iaStatus} 
             />
           )}
         </Grid>
       </MainBox>
 
-      <Box
-        sx={{ p: 2, width: '100%', display: 'flex', justifyContent: 'center' }}
-      >
+      <Box sx={{ p: 2, width: '100%', display: 'flex', justifyContent: 'center' }}>
         <InputContainer>
           <FormProvider {...formMethods}>
             <AttachedItems fileInputRef={fileInputRef} />

@@ -3,7 +3,7 @@ import { CloseRounded } from '@mui/icons-material'
 
 import { AttachmentChip, ChartsBlock, ExplanationBlock } from './components'
 
-const ChatMessages = ({ chatHistory, isLoading, onCancel }) => (
+const ChatMessages = ({ chatHistory, isLoading, onCancel, iaStatus }) => (
   <>
     {chatHistory.map((msg, index) => {
       const isUser = msg.role === 'user'
@@ -87,7 +87,7 @@ const ChatMessages = ({ chatHistory, isLoading, onCancel }) => (
       >
         <CircularProgress size={16} sx={{ color: '#aaaaaa' }} />
         <Typography variant="body2" sx={{ color: '#aaaaaa' }}>
-          Gerando gráficos...
+          {iaStatus || 'Gerando gráficos...'} 
         </Typography>
         <IconButton
           onClick={onCancel}

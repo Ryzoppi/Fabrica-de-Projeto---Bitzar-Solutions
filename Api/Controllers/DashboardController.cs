@@ -15,29 +15,68 @@ public class DashboardController : ControllerBase
         _aiService = aiService;
     }
 
-    [HttpPost("processar")]
-    public async Task<IActionResult> Processar(
-      [FromForm] List<IFormFile> arquivos,
-      [FromForm] string prompt,
-      [FromForm] string? history,
-      CancellationToken cancellationToken
-    ) {
-      try {
-        if (arquivos == null || arquivos.Count == 0) return BadRequest(new { erro = "Arquivo não fornecido" });
+[HttpPost("processar")]
+public async Task Processar(
+    [FromForm] List<IFormFile> arquivos,
+    [FromForm] string prompt,
+    [FromForm] string? history)
+{
 
-        if (string.IsNullOrEmpty(prompt)) return BadRequest(new { erro = "Prompt não fornecido" });
+        var bodyFeature = HttpContext.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpResponseBodyFeature>();
+    bodyFeature?.DisableBuffering();
 
-        // Processa todos os arquivos (ou só o primeiro)
+
+    if (arquivos == null || arquivos.Count == 0)
+    {
+        Response.StatusCode = 400;
+        await Response.WriteAsJsonAsync(new { erro = "Arquivo não fornecido" });
+        return;
+    }
+
+    if (string.IsNullOrEmpty(prompt))
+    {
+        Response.StatusCode = 400;
+        await Response.WriteAsJsonAsync(new { erro = "Prompt não fornecido" });
+        return;
+    }
+
+    Response.Headers["Content-Type"] = "text/event-stream";
+    Response.Headers["Cache-Control"] = "no-cache";
+    Response.Headers["Connection"] = "keep-alive";
+    Response.Headers["X-Accel-Buffering"] = "no";
+
+    var ct = HttpContext.RequestAborted;
+
+    async Task SendEvent(string type, string message, object? data = null)
+    {
+        var payload = new { type, message, data };
+        var json = System.Text.Json.JsonSerializer.Serialize(payload);
+        await Response.WriteAsync($"data: {json}\n\n", ct);
+        await Response.Body.FlushAsync(ct);
+        Console.WriteLine($"[SSE] {message}");
+    }
+
+    try
+    {
+        await SendEvent("status", "Preparando dados...");
         var resultadoPython = await _pythonService.ProcessarExcelAsync(arquivos[0]);
 
+        await SendEvent("status", "Processando dados e gerando gráficos...");
         var resultado = await _aiService.ChamarLlama(resultadoPython, prompt, history);
-        return Ok(resultado);
-      } catch (OperationCanceledException) {
-          return StatusCode(499, new { erro = "Requisição cancelada pelo cliente" });
-      } catch (HttpRequestException ex) {
-          return StatusCode(503, new { erro = "Serviço Python indisponível", detalhes = ex.Message });
-      } catch (Exception ex) {
-          return StatusCode(500, new { erro = "Erro ao processar", detalhes = ex.Message });
-      }
+
+        await SendEvent("done", "Concluído!", resultado);
     }
+    catch (OperationCanceledException)
+    {
+        Console.WriteLine("[SSE] Cancelado pelo usuário");
+    }
+    catch (HttpRequestException ex)
+    {
+        await SendEvent("error", $"Serviço Python indisponível: {ex.Message}");
+    }
+    catch (Exception ex)
+    {
+        await SendEvent("error", $"Erro: {ex.Message}");
+    }
+}
 }
