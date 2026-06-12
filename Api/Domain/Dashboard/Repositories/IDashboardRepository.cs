@@ -5,10 +5,10 @@ namespace Api.Domain.Dashboard.Repositories
 {
     public interface IDashboardRepository
     {
-        Task<Dashboard?> GetByIdAsync(DashboardId id);
-        Task<IEnumerable<Dashboard>> GetAllAsync();
-        Task<Dashboard> AddAsync(Dashboard dashboard);
-        Task<Dashboard> UpdateAsync(Dashboard dashboard);
+        Task<Api.Domain.Dashboard.Entities.Dashboard?> GetByIdAsync(DashboardId id);
+        Task<IEnumerable<Api.Domain.Dashboard.Entities.Dashboard>> GetAllAsync();
+        Task<Api.Domain.Dashboard.Entities.Dashboard> AddAsync(Api.Domain.Dashboard.Entities.Dashboard dashboard);
+        Task<Api.Domain.Dashboard.Entities.Dashboard> UpdateAsync(Api.Domain.Dashboard.Entities.Dashboard dashboard);
         Task DeleteAsync(DashboardId id);
     }
 }

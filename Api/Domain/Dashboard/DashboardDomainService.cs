@@ -5,7 +5,7 @@ namespace Api.Domain.Dashboard
 {
     public class DashboardDomainService
     {
-        public void CopyChartsFromDashboard(Dashboard sourceDashboard, Dashboard targetDashboard)
+        public void CopyChartsFromDashboard(Api.Domain.Dashboard.Entities.Dashboard sourceDashboard, Api.Domain.Dashboard.Entities.Dashboard targetDashboard)
         {
             if (sourceDashboard == null)
                 throw new ArgumentNullException(nameof(sourceDashboard));
@@ -24,7 +24,7 @@ namespace Api.Domain.Dashboard
             }
         }
 
-        public Dashboard MergeDashboards(Dashboard dashboard1, Dashboard dashboard2)
+        public Api.Domain.Dashboard.Entities.Dashboard MergeDashboards(Api.Domain.Dashboard.Entities.Dashboard dashboard1, Api.Domain.Dashboard.Entities.Dashboard dashboard2)
         {
             if (dashboard1 == null)
                 throw new ArgumentNullException(nameof(dashboard1));
@@ -32,7 +32,7 @@ namespace Api.Domain.Dashboard
             if (dashboard2 == null)
                 throw new ArgumentNullException(nameof(dashboard2));
 
-            var mergedDashboard = Dashboard.Create(
+            var mergedDashboard = Api.Domain.Dashboard.Entities.Dashboard.Create(
                 $"{dashboard1.Name} + {dashboard2.Name}",
                 $"Merged from {dashboard1.Name} and {dashboard2.Name}"
             );
