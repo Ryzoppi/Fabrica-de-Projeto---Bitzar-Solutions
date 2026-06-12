@@ -6,20 +6,20 @@ namespace Api.Infrastructure.Repositories
 {
     public class InMemoryDashboardRepository : IDashboardRepository
     {
-        private readonly List<Dashboard> _dashboards = new();
+        private readonly List<Api.Domain.Dashboard.Entities.Dashboard> _dashboards = new();
 
-        public Task<Dashboard?> GetByIdAsync(DashboardId id)
+        public Task<Api.Domain.Dashboard.Entities.Dashboard?> GetByIdAsync(DashboardId id)
         {
             var dashboard = _dashboards.FirstOrDefault(d => d.Id.Equals(id));
             return Task.FromResult(dashboard);
         }
 
-        public Task<IEnumerable<Dashboard>> GetAllAsync()
+        public Task<IEnumerable<Api.Domain.Dashboard.Entities.Dashboard>> GetAllAsync()
         {
             return Task.FromResult(_dashboards.AsEnumerable());
         }
 
-        public Task<Dashboard> AddAsync(Dashboard dashboard)
+        public Task<Api.Domain.Dashboard.Entities.Dashboard> AddAsync(Api.Domain.Dashboard.Entities.Dashboard dashboard)
         {
             if (dashboard == null)
                 throw new ArgumentNullException(nameof(dashboard));
@@ -31,7 +31,7 @@ namespace Api.Infrastructure.Repositories
             return Task.FromResult(dashboard);
         }
 
-        public Task<Dashboard> UpdateAsync(Dashboard dashboard)
+        public Task<Api.Domain.Dashboard.Entities.Dashboard> UpdateAsync(Api.Domain.Dashboard.Entities.Dashboard dashboard)
         {
             if (dashboard == null)
                 throw new ArgumentNullException(nameof(dashboard));

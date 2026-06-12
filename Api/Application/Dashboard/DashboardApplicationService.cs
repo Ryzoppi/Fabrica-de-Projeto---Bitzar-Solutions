@@ -57,7 +57,7 @@ namespace Api.Application.Dashboard
                 .Select(dp => new DataPoint(dp.Label, dp.Value))
                 .ToList();
 
-            var chart = Entities.Chart.Create(request.Title, request.Type, dataPoints);
+            var chart = Chart.Create(request.Title, request.Type, dataPoints);
             dashboard.AddChart(chart);
 
             await _repository.UpdateAsync(dashboard);
