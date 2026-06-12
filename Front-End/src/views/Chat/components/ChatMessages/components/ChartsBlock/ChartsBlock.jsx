@@ -19,14 +19,14 @@ import { CSS } from '@dnd-kit/utilities'
 import { ChartCard } from './components'
 
 const DEFAULT_COLORS = [
-  '#0d9488',
   '#14b8a6',
-  '#2dd4bf',
-  '#0891b2',
-  '#6366f1',
-  '#8b5cf6',
   '#f59e0b',
+  '#6366f1',
   '#ef4444',
+  '#10b981',
+  '#f97316',
+  '#8b5cf6',
+  '#06b6d4',
 ]
 
 const DEFAULT_CHART_CONFIG = {

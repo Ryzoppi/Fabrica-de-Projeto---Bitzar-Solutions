@@ -17,28 +17,29 @@ const sendMessage = ({ prompt, files, history = [], signal, onStatus }) =>
         const decoder = new TextDecoder()
 
         const read = () => {
-          reader.read().then(({ done, value }) => {
-            if (done) return
+          reader
+            .read()
+            .then(({ done, value }) => {
+              if (done) return
 
-            const text = decoder.decode(value)
-            const lines = text.split('\n\n').filter(Boolean)
+              const lines = decoder.decode(value).split('\n\n').filter(Boolean)
 
-            lines.forEach((line) => {
-              if (!line.startsWith('data: ')) return
-              try {
-                const json = JSON.parse(line.replace('data: ', ''))
-                console.log('[IA]:', json.message)
+              lines.forEach((line) => {
+                if (!line.startsWith('data: ')) return
+                try {
+                  const json = JSON.parse(line.replace('data: ', ''))
 
-                if (json.type === 'status') onStatus?.(json.message)
-                if (json.type === 'done')   resolve({ data: { data: json.data } })
-                if (json.type === 'error')  reject(new Error(json.message))
-              } catch (e) {
-                console.error('Erro ao parsear SSE:', e)
-              }
+                  if (json.type === 'status') onStatus?.(json.message)
+                  if (json.type === 'done') resolve(json.data.data)
+                  if (json.type === 'error') reject(new Error(json.message))
+                } catch (e) {
+                  console.error('Erro ao parsear SSE:', e)
+                }
+              })
+
+              read()
             })
-
-            read()
-          }).catch(reject)
+            .catch(reject)
         }
 
         read()

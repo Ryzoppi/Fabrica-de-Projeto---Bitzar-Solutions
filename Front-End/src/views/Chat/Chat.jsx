@@ -27,7 +27,7 @@ const getLastFileName = (chatHistory) => {
 const Chat = () => {
   const [chatHistory, setChatHistory] = useState([])
   const [isLoading, setIsLoading] = useState(false)
-  const [iaStatus, setIaStatus] = useState('') 
+  const [iaStatus, setIaStatus] = useState('')
 
   const abortControllerRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -46,7 +46,8 @@ const Chat = () => {
       .slice(-10)
       .map((msg) => ({
         role: msg.role === 'ia' ? 'assistant' : 'user',
-        content: msg.role === 'ia' ? (msg.rawForHistory ?? '') : (msg.content ?? ''),
+        content:
+          msg.role === 'ia' ? (msg.rawForHistory ?? '') : (msg.content ?? ''),
       }))
       .filter((msg) => msg.content !== '')
 
@@ -59,20 +60,19 @@ const Chat = () => {
     setChatHistory((prev) => [...prev, userMessage])
     reset({ files: [], prompt: '' })
     setIsLoading(true)
-    setIaStatus('Preparando dados...') 
+    setIaStatus('Preparando dados...')
 
     abortControllerRef.current = new AbortController()
 
     try {
-      const response = await services.modules.chat.sendMessage({
+      const dataPath = await services.modules.chat.sendMessage({
         prompt,
         files,
         history,
         signal: abortControllerRef.current.signal,
-        onStatus: (status) => setIaStatus(status), 
+        onStatus: (status) => setIaStatus(status),
       })
 
-      const dataPath = response?.data?.data
       const charts = dataPath?.charts ?? []
 
       const iaMessage = {
@@ -91,10 +91,19 @@ const Chat = () => {
       setChatHistory((prev) => [...prev, iaMessage])
     } catch (error) {
       if (axios.isCancel(error) || error.name === 'AbortError') {
-        setChatHistory((prev) => [...prev, { role: 'ia', content: 'Criação de gráficos cancelada.' }])
+        setChatHistory((prev) => [
+          ...prev,
+          { role: 'ia', content: 'Criação de gráficos cancelada.' },
+        ])
       } else {
         console.error('Erro:', error)
-        setChatHistory((prev) => [...prev, { role: 'ia', content: 'Ocorreu um erro ao processar sua solicitação.' }])
+        setChatHistory((prev) => [
+          ...prev,
+          {
+            role: 'ia',
+            content: 'Ocorreu um erro ao processar sua solicitação.',
+          },
+        ])
       }
     } finally {
       setIsLoading(false)
@@ -134,13 +143,15 @@ const Chat = () => {
               chatHistory={chatHistory}
               isLoading={isLoading}
               onCancel={handleCancel}
-              iaStatus={iaStatus} 
+              iaStatus={iaStatus}
             />
           )}
         </Grid>
       </MainBox>
 
-      <Box sx={{ p: 2, width: '100%', display: 'flex', justifyContent: 'center' }}>
+      <Box
+        sx={{ p: 2, width: '100%', display: 'flex', justifyContent: 'center' }}
+      >
         <InputContainer>
           <FormProvider {...formMethods}>
             <AttachedItems fileInputRef={fileInputRef} />
