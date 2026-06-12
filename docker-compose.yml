@@ -44,24 +44,23 @@ services:
         - path: ./Front-End/package.json
           action: rebuild
 
-  ollama:
+  ollama-chart:
     image: ollama/ollama:latest
-    container_name: ollama
+    container_name: ollama-chart
     deploy:
       resources:
         limits:
-          memory: 6g
+          memory: 4g
         reservations:
-          memory: 4g  
+          memory: 3g
     volumes:
-      - ollama_data:/root/.ollama
+      - ollama_chart_data:/root/.ollama
       - ./PythonApi:/workspace
     entrypoint: >
       sh -c "ollama serve &
             sleep 5 &&
             ollama pull qwen2.5:3b &&
             ollama pull nomic-embed-text &&
-            ollama pull llama3.2:3b &&
             ollama create bitzar-rag -f /workspace/Modelfile &&
             wait"
     networks:
@@ -71,6 +70,25 @@ services:
         - path: ./PythonApi/Modelfile
           action: rebuild
 
+  ollama-explain:
+    image: ollama/ollama:latest
+    container_name: ollama-explain
+    deploy:
+      resources:
+        limits:
+          memory: 3g
+        reservations:
+          memory: 2g
+    volumes:
+      - ollama_explain_data:/root/.ollama
+    entrypoint: >
+      sh -c "ollama serve &
+            sleep 5 &&
+            ollama pull llama3.2:1b &&
+            wait"
+    networks:
+      - app-network
+
   csharp-api:
     build: ./Api
     container_name: csharp-api
@@ -78,7 +96,7 @@ services:
       - "5000:5000"
     depends_on:
       - postgres
-      - ollama
+      - ollama-chart
     environment:
       - ASPNETCORE_URLS=http://+:5000
     networks:
@@ -96,9 +114,11 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       OLLAMA_HOST: ${OLLAMA_HOST}
+      OLLAMA_EXPLAIN_HOST: ${OLLAMA_EXPLAIN_HOST}
     depends_on:
       - postgres
-      - ollama
+      - ollama-chart
+      - ollama-explain
     networks:
       - app-network
     develop:
@@ -119,5 +139,6 @@ networks:
 
 volumes:
   postgres_data:
-  ollama_data:
+  ollama_chart_data:
+  ollama_explain_data:
   pgadmin_data:
