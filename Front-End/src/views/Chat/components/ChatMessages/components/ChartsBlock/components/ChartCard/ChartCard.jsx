@@ -15,6 +15,10 @@ const normalizeSeries = (series, type) => {
   if (!Array.isArray(series)) return []
 
   if (isPolar(type)) {
+    // Formato [{name, data:[...]}] → extrai numbers
+    if (series.length > 0 && typeof series[0] === 'object' && Array.isArray(series[0]?.data)) {
+      return series[0].data.map((v) => Number(v) || 0)
+    }
     return series.map((s) => {
       if (typeof s === 'number') return s
       if (typeof s === 'object' && s !== null) return Number(s.y ?? s.data ?? 0)
@@ -23,15 +27,15 @@ const normalizeSeries = (series, type) => {
   }
 
   return series.map((s) => {
-    if (typeof s !== 'object' || s === null) {
-      return { name: 'Série', data: [] }
-    }
-    return {
-      ...s,
-      data: Array.isArray(s.data) ? s.data : [],
-    }
+    if (typeof s !== 'object' || s === null) return { name: 'Série', data: [] }
+    return { ...s, data: Array.isArray(s.data) ? s.data : [] }
   })
 }
+
+const getCats = (chart) =>
+  isPolar(chart.type)
+    ? (chart.options?.labels ?? [])
+    : (chart.options?.xaxis?.categories ?? [])
 
 const ChartCard = ({
   chart,
@@ -39,26 +43,54 @@ const ChartCard = ({
   onApply,
   dragListeners,
   onColorChange,
+  onFilter,
+  activeFilter,
 }) => {
   const [modalOpen, setModalOpen] = useState(false)
   const [colorModalOpen, setColorModalOpen] = useState(false)
   const [selectedBar, setSelectedBar] = useState(null)
 
   const safeSeries = normalizeSeries(chart.series, chart.type)
+  const cats = getCats(chart)
 
   const chartOptions = {
     ...(chart.options ?? {}),
-
     chart: {
       ...(chart.options?.chart ?? {}),
-
       events: {
-        dataPointSelection: (event, chartContext, config) => {
-          setSelectedBar(config.dataPointIndex)
+        dataPointSelection: (_event, _chartContext, config) => {
+          const idx = config.dataPointIndex
+          const category = cats[idx]
+
+          // Se tem onFilter, propaga o filtro global
+          if (category != null && onFilter) {
+            onFilter(String(category))
+          }
+
+          // Também abre o modal de cores (comportamento original)
+          setSelectedBar(idx)
           setColorModalOpen(true)
+        },
+        // Line e area: clique no ponto
+        click: (_event, _chartContext, config) => {
+          if (
+            !isPolar(chart.type) &&
+            chart.type !== 'bar' &&
+            config?.dataPointIndex != null &&
+            config.dataPointIndex >= 0
+          ) {
+            const category = cats[config.dataPointIndex]
+            if (category != null && onFilter) {
+              onFilter(String(category))
+            }
+          }
         },
       },
     },
+    // Marcadores visíveis em line/area para facilitar clique
+    ...((['line', 'area'].includes(chart.type)) && {
+      markers: { size: 5, hover: { size: 8 }, cursor: 'pointer' },
+    }),
   }
 
   return (
@@ -67,10 +99,11 @@ const ChartCard = ({
         sx={{
           position: 'relative',
           width: '100%',
-          border: '1px solid #3F3F3F',
+          border: activeFilter ? '1px solid #0d9488' : '1px solid #3F3F3F',
           borderRadius: 2,
           p: 1,
           bgcolor: 'rgba(255, 255, 255, 0.02)',
+          transition: 'border-color 0.2s',
         }}
       >
         <Box
@@ -125,7 +158,7 @@ const ChartCard = ({
         )}
 
         <Chart
-          key={`${chart.id}-${chart.type}-${JSON.stringify(chart.options?.colors)}`}
+          key={`${chart.id}-${chart.type}-${JSON.stringify(chart.options?.colors)}-${activeFilter ?? ''}`}
           options={chartOptions}
           series={safeSeries}
           type={chart.type}
